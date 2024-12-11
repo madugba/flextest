@@ -1,0 +1,5 @@
+logs
+services/api-gateway/node_modules
+services/api-gateway/.env
+services/admin-server/node_modules
+services/admin-server/.env
