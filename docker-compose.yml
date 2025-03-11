@@ -1,0 +1,162 @@
+services:
+
+  redis-server:
+    image: redis
+    container_name: redis-server
+    restart: always
+    networks:
+      - flextest-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - redis-data:/data
+  consul:
+    image: hashicorp/consul
+    container_name: consul
+    restart: always
+    ports:
+      - "8500:8500"     
+      - "8600:8600/udp"
+    depends_on:
+      - redis-server
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=0.0.0.0
+    networks:
+      - flextest-network
+    healthcheck:
+      test: ["CMD", "consul", "info"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes:
+      - consul-data:/consul/data
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    restart: always
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:29092
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+    depends_on:
+      - zookeeper
+    networks:
+      - flextest-network
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    restart: always
+    ports:
+      - "2181:2181"
+    networks:
+      - flextest-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      target: dev
+    container_name: api-gateway
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    restart: always
+    env_file:
+      - ./api-gateway/.env
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_PORT=${CONSUL_PORT}
+      - REDIS_URL=${REDIS_URL}
+    networks:
+      - flextest-network
+    depends_on:
+      - consul
+      - redis-server
+      - kafka
+
+
+  admin-server:
+    build:
+      context: ./services/admin-server
+    container_name: admin-server
+    ports:
+      - "${PORT:-3001}:${PORT:-3001}"
+    env_file:
+      - ./services/admin-server/.env
+    restart: always
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - DATABASE_URL=${DATABASE_URL}
+      - KAFKA_BROKERS1=${KAFKA_BROKERS1}
+      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_PORT=${CONSUL_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_TOKEN=${JWT_TOKEN}
+      - EMAIL_ADDRESS=${EMAIL_ADDRESS}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - MAX_RATELIMIT=${MAX_RATELIMIT}
+      - APIENDPOINT=${APIENDPOINT}
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    networks:
+      - flextest-network
+    depends_on:
+      - api-gateway
+
+
+  authentication:
+    build:
+      context: ./services/authentication
+    container_name: authentication
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - KAFKA_BROKERS1=${KAFKA_BROKERS1}
+      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_PORT=${CONSUL_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_TOKEN=${JWT_TOKEN}
+      - EMAIL_ADDRESS=${EMAIL_ADDRESS}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - MAX_RATELIMIT=${MAX_RATELIMIT}
+      - APIENDPOINT=${APIENDPOINT}
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    networks:
+      - flextest-network
+    depends_on:
+      - api-gateway
+      - admin-server
+
+
+networks:
+  flextest-network:
+    driver: bridge
+
+volumes:
+  consul-data:
+  redis-data:
+    driver: local
