@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CandidateStatus {
+  NOT_STARTED
+  LOGGED_IN
+  TAKING_TEST
+  COMPLETED_TEST
+}
+
+enum ExamSessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Candidate {
+  id               Int             @id @default(autoincrement())
+  candidatePicture String?         @db.VarChar(200)
+  candidateId      String          @unique @db.VarChar(20)
+  surname          String          @db.VarChar(120)
+  firstname        String          @db.VarChar(100)
+  othername        String?         @db.VarChar(100)
+  sessionId        String
+  campusId         String?         @db.VarChar(120)
+  seatNo           Int
+  status           CandidateStatus @default(NOT_STARTED)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  examSession ExamSession        @relation(fields: [sessionId], references: [sessionId])
+  subjects    CandidateSubject[] // Many-to-Many relationship with Subjects
+
+  @@index([surname, firstname])
+  @@index([sessionId, seatNo])
+}
+
+model ExamSession {
+  id             Int               @id @default(autoincrement())
+  sessionId      String            @unique @db.VarChar(100)
+  sessionName    String            @db.VarChar(100)
+  examId         String            @db.VarChar(100)
+  capacity       Int
+  totalQuestions Int
+  duration       Int
+  examDate       DateTime
+  status         ExamSessionStatus @default(SCHEDULED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  exam              Exam               @relation(fields: [examId], references: [examCode])
+  candidates        Candidate[]
+  examSettings      ExamSettings?
+  candidateSubjects CandidateSubject[] // Relation to CandidateSubject
+
+  @@index([examId])
+  @@index([examDate, status])
+}
+
+model Exam {
+  id           Int      @id @default(autoincrement())
+  organization String   @db.VarChar(100)
+  examCode     String   @unique @db.VarChar(100)
+  examName     String   @db.VarChar(150)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions ExamSession[]
+
+  @@index([organization])
+  @@index([examName])
+}
+
+model CandidateSubject {
+  id          Int    @id @default(autoincrement())
+  candidateId Int
+  subjectId   Int
+  sessionId   String // References ExamSession to tie subject selection to a session
+
+  candidate   Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  subject     Subjects    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  examSession ExamSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@unique([candidateId, subjectId, sessionId]) // Prevents duplicate subject selection within the same session
+  @@index([candidateId])
+  @@index([subjectId])
+  @@index([sessionId])
+}
+
+model Subjects {
+  id          Int      @id @default(autoincrement())
+  subjectId   String   @unique
+  subjectName String   @db.VarChar(120)
+  createdAt   DateTime @default(now())
+
+  examSettings     ExamSettings[] // ✅ One-to-Many relation (A subject can be in multiple ExamSettings)
+  CandidateSubject CandidateSubject[]
+}
+
+model ExamSettings {
+  id                       Int    @id @default(autoincrement())
+  sessionId                String @unique
+  numberOfGeneralQuestion  Int
+  numberOfSubjectsQuestion Int
+  generalSubjectId         String
+
+  examSession    ExamSession @relation(fields: [sessionId], references: [sessionId])
+  generalSubject Subjects    @relation(fields: [generalSubjectId], references: [subjectId]) // ✅ One-to-Many
+
+  @@index([sessionId])
+  @@index([generalSubjectId])
+}
+
+model Examiners {
+  id             Int      @id @default(autoincrement())
+  userId         String   @unique @default(uuid())
+  email          String   @unique
+  name           String?
+  password       String
+  profilePicture String?
+  createdAt      DateTime @default(now())
+
+  @@index([name])
+}

@@ -1,5 +1,17 @@
 logs
 services/api-gateway/node_modules
+services/api-gateway/logs
 services/api-gateway/.env
 services/admin-server/node_modules
+services/admin-server/logs
 services/admin-server/.env
+services/.env
+services/node_modules
+services/authentication/node_modules
+services/authentication/logs
+services/authentication/.env
+email.html
+node_modules
+*.log
+*.env
+.DS_Store

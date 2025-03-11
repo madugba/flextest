@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+service AuthService {
+  // Token-related endpoints
+  rpc CreateLoginToken (CreateTokenRequest) returns (TokenResponse);
+  rpc CreateToken (CreateTokenRequest) returns (TokenResponse);
+  rpc VerifyToken (VerifyTokenRequest) returns (VerifyTokenResponse);
+  rpc VerifyLoginToken (VerifyTokenRequest) returns (VerifyTokenResponse);
+
+  // User-related endpoints
+  rpc CreateUser (CreateUserRequest) returns (UserResponse);
+  rpc LoginUser (LoginUserRequest) returns (LoginResponse);
+  rpc FindUserByEmail (FindUserByEmailRequest) returns (UserResponse);
+  rpc FindUserByUserId (FindUserByUserIdRequest) returns (UserResponse);
+  rpc UpdateInternalPassword (UpdateInternalPasswordRequest) returns (UpdatePasswordResponse);
+  rpc UpdateExternalPassword (UpdateExternalPasswordRequest) returns (UpdatePasswordResponse);
+}
+
+
+// Common Messages
+message User {
+  string userId = 1;
+  string email = 2;
+  string name = 3;
+  string profilePicture = 4;
+  string createdAt = 5;
+}
+
+message Error {
+  string message = 1;
+  int32 code = 2;
+}
+
+// Token-related Messages
+message CreateTokenRequest {
+  string userId = 1;
+}
+
+message TokenResponse {
+  string userId = 1;
+  string token = 2;
+  string error = 3;
+}
+
+message VerifyTokenRequest {
+  string userId = 1;
+  string token = 2;
+}
+
+message VerifyTokenResponse {
+  bool isValid = 1;
+  string userId = 2;
+  string token = 3;
+  string error = 4;
+}
+
+message CreateUserRequest {
+  string email = 1;
+  string name = 2;
+  string password = 3;
+  string profilePicture = 4;
+}
+
+message UserResponse {
+  bool status = 1;
+  User data = 2;
+  string error = 3;
+}
+
+message LoginUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+  User data = 2;
+  string error = 3;
+}
+
+message FindUserByEmailRequest {
+  string email = 1;
+}
+
+message FindUserByUserIdRequest {
+  string userId = 1;
+}
+
+message UpdateInternalPasswordRequest {
+  string userId = 1;
+  string newpassword = 2;
+  string oldpassword = 3;
+}
+
+message UpdateExternalPasswordRequest {
+  string password = 1;
+  string userId = 2;
+}
+
+message UpdatePasswordResponse {
+  bool status = 1;
+  string error = 2;
+}
