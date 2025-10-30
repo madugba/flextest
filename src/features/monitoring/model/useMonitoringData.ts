@@ -201,6 +201,10 @@ export function useMonitoringData(sessionId?: string) {
         }
       }
     )
+
+    // Schedule a lightweight refetch to reconcile with server truth
+    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'], exact: true })
+    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'], exact: true })
   }, [sessionId, queryClient])
 
   // Register WebSocket event listener
