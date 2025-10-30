@@ -19,7 +19,7 @@ import { useSocket } from '@/shared/hooks/useSocket'
  */
 export function useMonitoringData(sessionId?: string) {
   const queryClient = useQueryClient()
-  const { socket, isConnected } = useSocket()
+  useSocket()
 
   // Debug: Log when hook initializes
   console.log('[useMonitoringData] Hook initialized with sessionId:', sessionId)
@@ -38,7 +38,7 @@ export function useMonitoringData(sessionId?: string) {
     enabled: !!sessionId,
     staleTime: 0, // Always consider stale to enable polling
     // refetchInterval: 5000, // Poll every 3 seconds
-    refetchOnWindowFocus: true, // Also refresh when returning to tab
+    refetchOnWindowFocus: false, // Also refresh when returning to tab
   })
 
   // Fetch session details with candidates (initial load via HTTP)
@@ -53,22 +53,10 @@ export function useMonitoringData(sessionId?: string) {
     enabled: !!sessionId, // Fetch on mount and when sessionId changes
     staleTime: 0, // Always consider stale to enable polling
     // refetchInterval: 5000, // Poll every 3 seconds
-    refetchOnWindowFocus: true, // Also refresh when returning to tab
+    refetchOnWindowFocus: false, // Also refresh when returning to tab
   })
 
-  // Ensure this hook joins the metrics room so it receives candidate:login
-  // independent of other hooks/components
-  useEffect(() => {
-    if (!isConnected) return
-
-    console.log('[useMonitoringData] Subscribing to metrics room for candidate:login...')
-    socket.emit('subscribe:metrics')
-
-    return () => {
-      console.log('[useMonitoringData] Unsubscribing from metrics room...')
-      socket.emit('unsubscribe:metrics')
-    }
-  }, [isConnected, socket])
+  // No room subscription needed: backend emits candidate:login globally
 
   // Session control mutation (start, pause, resume, end)
   const controlMutation = useMutation({
