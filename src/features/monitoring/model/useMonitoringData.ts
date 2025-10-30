@@ -97,7 +97,9 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'statistics'],
       (oldData) => {
         if (!oldData) {
-          console.log('[useMonitoringData] ⚠️ No existing statistics data in cache')
+          console.log('[useMonitoringData] ⚠️ No statistics cache - triggering refetch')
+          // Trigger refetch if cache is empty
+          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'] })
           return oldData
         }
 
@@ -106,9 +108,13 @@ export function useMonitoringData(sessionId?: string) {
           new: data.statistics
         })
 
+        // Create new object to ensure React Query detects the change
         return {
           ...oldData,
-          statistics: data.statistics,
+          statistics: {
+            ...data.statistics,
+          },
+          timestamp: data.timestamp,
         }
       }
     )
@@ -118,7 +124,9 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'details'],
       (oldData) => {
         if (!oldData) {
-          console.log('[useMonitoringData] ⚠️ No existing candidate list data in cache')
+          console.log('[useMonitoringData] ⚠️ No details cache - triggering refetch')
+          // Trigger refetch if cache is empty
+          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
           return oldData
         }
 
@@ -131,34 +139,65 @@ export function useMonitoringData(sessionId?: string) {
         // Check if candidate already exists in the list
         const existingIndex = oldData.candidates.findIndex(c => c.id === data.candidate.id)
 
-        let updatedCandidates
+        let updatedCandidates: typeof oldData.candidates
         if (existingIndex >= 0) {
-          // Update existing candidate
+          // Update existing candidate - create new array and new candidate object
           console.log('[useMonitoringData] 🔄 Updating existing candidate at index:', existingIndex)
-          updatedCandidates = [...oldData.candidates]
-          updatedCandidates[existingIndex] = {
-            ...oldData.candidates[existingIndex],
-            ...data.candidate,
-            status: data.candidate.status as CandidateStatus,
-          }
+          updatedCandidates = oldData.candidates.map((c, idx) => {
+            if (idx === existingIndex) {
+              // Return new candidate object with all fields
+              return {
+                id: data.candidate.id,
+                firstName: data.candidate.firstName,
+                lastName: data.candidate.lastName,
+                surname: data.candidate.surname ?? null,
+                firstname: data.candidate.firstname ?? null,
+                email: data.candidate.email ?? null,
+                seatNumber: data.candidate.seatNumber,
+                status: data.candidate.status as CandidateStatus,
+                lastLoginAt: data.candidate.lastLoginAt ?? null,
+                picture: data.candidate.picture ?? null,
+                clientInfo: data.candidate.clientInfo,
+                subjects: data.candidate.subjects || [],
+              }
+            }
+            return c
+          })
         } else {
-          // Add new candidate
+          // Add new candidate - create new array
           console.log('[useMonitoringData] ➕ Adding new candidate to list')
           updatedCandidates = [
             ...oldData.candidates,
             {
-              ...data.candidate,
+              id: data.candidate.id,
+              firstName: data.candidate.firstName,
+              lastName: data.candidate.lastName,
+              surname: data.candidate.surname ?? null,
+              firstname: data.candidate.firstname ?? null,
+              email: data.candidate.email ?? null,
+              seatNumber: data.candidate.seatNumber,
               status: data.candidate.status as CandidateStatus,
+              lastLoginAt: data.candidate.lastLoginAt ?? null,
+              picture: data.candidate.picture ?? null,
+              clientInfo: data.candidate.clientInfo,
+              subjects: data.candidate.subjects || [],
             }
           ]
         }
 
-        console.log('[useMonitoringData] ✅ Candidate list cache updated successfully')
+        console.log('[useMonitoringData] ✅ Candidate list cache updated successfully', {
+          newCandidateCount: updatedCandidates.length,
+          updatedCandidateId: data.candidate.id
+        })
 
+        // Create new object to ensure React Query detects the change
         return {
           ...oldData,
-          statistics: data.statistics,
+          statistics: {
+            ...data.statistics,
+          },
           candidates: updatedCandidates,
+          timestamp: data.timestamp,
         }
       }
     )
