@@ -32,36 +32,36 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-md">
+      <div className="bg-white rounded-lg border border-gray-200 p-6 w-full max-w-sm">
         {/* Logo and Title */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="mb-4">
+        <div className="flex flex-col items-center mb-6">
+          <div className="mb-3">
             <Image
               src="/logo-small.png"
               alt="FlexTest"
-              width={60}
-              height={60}
+              width={48}
+              height={48}
               className="drop-shadow-lg"
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">
             FlexTest
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm text-gray-600">
             Sign in to your admin account
           </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <Alert variant="error" className="mb-6">
+          <Alert variant="error" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <Input
             label="Email"
             type="email"
@@ -111,30 +111,14 @@ export default function LoginPage() {
 
           <Button
             type="submit"
-            className="w-full mt-6 h-12"
+            className="w-full mt-4 h-10"
             disabled={loading}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
 
-        {/* Create Center Link */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-center text-sm text-gray-600 mb-2">
-            Don&apos;t have a center yet?
-          </p>
-          <Link href="/onboarding">
-            <Button
-              variant="outline"
-              className="w-full"
-              type="button"
-            >
-              Create Center
-            </Button>
-          </Link>
-        </div>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-xs text-gray-500 mt-4">
           Secure admin authentication
         </p>
       </div>

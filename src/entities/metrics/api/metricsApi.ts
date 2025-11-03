@@ -6,7 +6,6 @@ import { config } from '@/shared/config'
  * Handles fetching real-time and historical metrics
  */
 
-// Metrics Types
 export interface SystemMetrics {
   server: {
     status: 'healthy' | 'degraded' | 'down'

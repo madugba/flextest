@@ -23,6 +23,7 @@ import {
 } from '@/entities/candidate'
 import { DeleteCandidateDialog } from '@/features/candidate-delete'
 import { CandidateDetailsDrawer } from '@/features/candidate-details'
+import { EditCandidateDialog } from '@/features/candidate-edit'
 import { useCandidateTable } from '../model/useCandidateTable'
 import { MoreVertical, Search } from 'lucide-react'
 
@@ -43,45 +44,43 @@ function CandidateActions({
   return (
     <CandidateDetailsDrawer>
       {({ onViewDetails }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onViewDetails(candidate.id)}
-          >
-            View
-          </Button>
-
-          <DeleteCandidateDialog
-            onSuccess={() => {
-              onSuccess()
-              onDeleteSuccess?.(`Candidate ${getCandidateFullName(candidate)} deleted successfully`)
-            }}
-          >
-            {({ onDelete }) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onViewDetails(candidate.id)}>
-                    View Details
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onDelete(candidate)}
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </DeleteCandidateDialog>
-        </div>
+        <EditCandidateDialog onSuccess={onSuccess}>
+          {({ onEdit }) => (
+            <DeleteCandidateDialog
+              onSuccess={() => {
+                onSuccess()
+                onDeleteSuccess?.(`Candidate ${getCandidateFullName(candidate)} deleted successfully`)
+              }}
+            >
+              {({ onDelete }) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => onViewDetails(candidate.id)}>
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(candidate.id)}>
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => onDelete(candidate)}
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </DeleteCandidateDialog>
+          )}
+        </EditCandidateDialog>
       )}
     </CandidateDetailsDrawer>
   )
@@ -125,6 +124,13 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
             <div className="text-sm text-muted-foreground">{row.email}</div>
           </div>
         </div>
+      ),
+    },
+    {
+      accessorKey: 'id',
+      header: 'Candidate ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">{row.id}</span>
       ),
     },
     {
@@ -218,6 +224,8 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
           <option value="PENDING">Pending</option>
           <option value="APPROVED">Approved</option>
           <option value="REJECTED">Rejected</option>
+          <option value="SUBMITTED">Submitted</option>
+          <option value="ACTIVE">Active</option>
         </select>
       </div>
 

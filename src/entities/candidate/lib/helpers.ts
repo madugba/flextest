@@ -35,6 +35,10 @@ export function getCandidateStatusColor(status?: Candidate['status']): string {
       return 'green'
     case 'REJECTED':
       return 'red'
+    case 'ACTIVE':
+      return 'blue'
+    case 'SUBMITTED':
+      return 'purple'
     case 'PENDING':
     default:
       return 'yellow'
@@ -50,6 +54,10 @@ export function getCandidateStatusLabel(status?: Candidate['status']): string {
       return 'Approved'
     case 'REJECTED':
       return 'Rejected'
+    case 'ACTIVE':
+      return 'Active'
+    case 'SUBMITTED':
+      return 'Submitted'
     case 'PENDING':
       return 'Pending'
     default:

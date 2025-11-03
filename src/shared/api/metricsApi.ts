@@ -6,7 +6,6 @@ import { config } from '../config'
  * Handles fetching real-time and historical metrics
  */
 
-// Metrics Types
 export interface SystemMetrics {
   server: {
     status: 'healthy' | 'degraded' | 'down'
@@ -160,9 +159,6 @@ export async function getActivityEvents(limit: number = 20): Promise<ActivityEve
 export function createMetricsStream(): EventSource {
   const baseUrl = config.apiBaseUrl
   const streamUrl = `${baseUrl}/metrics/stream`
-
-  // Note: EventSource doesn't support custom headers, so we pass token as query param
-  // The backend will need to support this or we'll use a different approach
   const eventSource = new EventSource(streamUrl)
 
   return eventSource

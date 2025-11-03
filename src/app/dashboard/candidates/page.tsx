@@ -1,20 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { AddCandidateDialog } from '@/features/candidate-add'
 import { ImportCandidatesDialog } from '@/features/candidate-import'
 import { CandidateTable } from '@/widgets/candidate-table'
-import { Alert } from '@/shared/ui/Alert'
 import { DashboardHeader } from '@/widgets/dashboard/ui/DashboardHeader'
+import { Button } from '@/shared/ui/Button'
+import { toast } from 'sonner'
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
 
 export default function CandidatesPage() {
-  const [success, setSuccess] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const handleSuccess = (message: string) => {
-    setSuccess(message)
+    toast.success(message)
     setRefreshTrigger((prev) => prev + 1) // Trigger table refresh
-    setTimeout(() => setSuccess(null), 3000)
   }
 
   const handleImportSuccess = (count: number) => {
@@ -22,14 +22,14 @@ export default function CandidatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen overflow-y-auto bg-gray-50">
       <DashboardHeader
         serverStatus="healthy"
         lastUpdate={new Date()}
         connected={true}
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 pb-12">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Candidate Management</h1>
@@ -42,17 +42,14 @@ export default function CandidatesPage() {
             <ImportCandidatesDialog
               onSuccess={handleImportSuccess}
             />
-            <AddCandidateDialog
-              onSuccess={() => handleSuccess('Candidate created successfully!')}
-            />
+            <Link href="/dashboard/candidates/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Candidate
+              </Button>
+            </Link>
           </div>
         </div>
-
-        {success && (
-          <Alert className="bg-green-50 text-green-900 border-green-200">
-            {success}
-          </Alert>
-        )}
 
         <CandidateTable
           refreshTrigger={refreshTrigger}

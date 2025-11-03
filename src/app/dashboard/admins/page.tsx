@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { AddAdminDialog } from '@/features/admin-add'
 import { AdminTable } from '@/widgets/admin-table'
 import { Alert } from '@/shared/ui/Alert'
 import { DashboardHeader } from '@/widgets/dashboard/ui/DashboardHeader'
@@ -25,16 +24,11 @@ export default function AdminsPage() {
       />
 
       <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Management</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage system administrators and their permissions
-            </p>
-          </div>
-          <AddAdminDialog
-            onSuccess={() => handleSuccess('Admin created successfully!')}
-          />
+        <div>
+          <h1 className="text-3xl font-bold">Admin Management</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage system administrators and their permissions
+          </p>
         </div>
 
         {success && (

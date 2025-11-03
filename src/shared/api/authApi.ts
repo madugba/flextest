@@ -9,6 +9,8 @@ export interface User {
   centerId: string | null
   centerName?: string
   permissions: string[]
+  phone?: string
+  isActive?: boolean
 }
 
 export interface TokenResponse {

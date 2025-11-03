@@ -21,6 +21,7 @@ interface AuthContextType {
   login: (credentials: LoginRequest) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  updateUser: (userData: Partial<User>) => void
   clearError: () => void
   isAuthenticated: boolean
 }
@@ -122,6 +123,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [router])
 
+  const updateUser = useCallback((userData: Partial<User>) => {
+    setUser((prevUser) => {
+      if (!prevUser) return null
+      return { ...prevUser, ...userData }
+    })
+  }, [])
+
   const clearError = useCallback(() => {
     setError(null)
   }, [])
@@ -133,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     refreshUser,
+    updateUser,
     clearError,
     isAuthenticated: !!user,
   }

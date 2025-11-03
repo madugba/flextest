@@ -4,13 +4,14 @@ import {
   getSessionStatistics,
   getSessionDetails,
   controlSession,
+  getCandidatesProgress,
   type SessionControlRequest,
   type SessionMonitoringStats,
   type SessionMonitoringDetails
 } from '@/entities/monitoring'
 import type { CandidateStatus } from '@/entities/candidate'
 import { useSocketEvent } from '@/shared/hooks/useSocketEvent'
-import type { CandidateLoginEvent } from '@/shared/lib/socket'
+import type { CandidateLoginEvent, CandidateLogoutEvent, ExamStartedEvent, ExamAnswerSubmittedEvent } from '@/shared/lib/socket'
 import { useSocket } from '@/shared/hooks/useSocket'
 
 /**
@@ -55,6 +56,51 @@ export function useMonitoringData(sessionId?: string) {
     // refetchInterval: 5000, // Poll every 3 seconds
     refetchOnWindowFocus: false, // Also refresh when returning to tab
   })
+
+  // Fetch candidates progress on mount and refresh
+  // This syncs the exam progress for all candidates when the page loads
+  useEffect(() => {
+    if (sessionId && sessionDetails) {
+      getCandidatesProgress(sessionId)
+        .then((progressData) => {
+          console.log('[useMonitoringData] 📊 Fetched candidates progress:', progressData)
+
+          // Update the cache with progress data
+          queryClient.setQueryData<SessionMonitoringDetails>(
+            ['monitoring', 'session', sessionId, 'details'],
+            (oldData) => {
+              if (!oldData) return oldData
+
+              // Create a map for quick lookup
+              const progressMap = new Map(
+                progressData.map(p => [p.candidateId, p])
+              )
+
+              // Update candidates with their progress
+              const updatedCandidates = oldData.candidates.map((candidate) => {
+                const progress = progressMap.get(candidate.id)
+                if (progress) {
+                  return {
+                    ...candidate,
+                    totalQuestions: progress.totalQuestions,
+                    attempted: progress.totalAttempted,
+                  }
+                }
+                return candidate
+              })
+
+              return {
+                ...oldData,
+                candidates: updatedCandidates,
+              }
+            }
+          )
+        })
+        .catch((error) => {
+          console.error('[useMonitoringData] Failed to fetch candidates progress:', error)
+        })
+    }
+  }, [sessionId, sessionDetails, queryClient])
 
   // No room subscription needed: backend emits candidate:login globally
 
@@ -207,16 +253,244 @@ export function useMonitoringData(sessionId?: string) {
     queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'], exact: true })
   }, [sessionId, queryClient])
 
-  // Register WebSocket event listener
-  useSocketEvent('candidate:login', handleCandidateLogin)
-
-  // Debug: Log when event listener is registered
-  useEffect(() => {
-    console.log('[useMonitoringData] 📡 Registered listener for candidate:login event', {
-      sessionId,
-      handlerRegistered: !!handleCandidateLogin
+  // Listen to candidate:logout WebSocket events for real-time updates
+  const handleCandidateLogout = useCallback((data: CandidateLogoutEvent) => {
+    console.log('[useMonitoringData] 🔴 candidate:logout event received:', {
+      candidateId: data.candidateId,
+      candidateName: data.candidateName,
+      sessionId: data.sessionId,
+      currentSessionId: sessionId,
+      statistics: data.statistics,
+      reason: data.reason,
+      timestamp: data.timestamp,
     })
-  }, [sessionId, handleCandidateLogin])
+
+    // Only update if the event is for the current session
+    if (data.sessionId !== sessionId) {
+      console.log('[useMonitoringData] ⚠️ Event ignored - different session', {
+        eventSession: data.sessionId,
+        currentSession: sessionId
+      })
+      return
+    }
+
+    console.log('[useMonitoringData] ✅ Processing candidate logout event for current session')
+
+    // 1. Update statistics in cache
+    queryClient.setQueryData<SessionMonitoringStats>(
+      ['monitoring', 'session', sessionId, 'statistics'],
+      (oldData) => {
+        if (!oldData) {
+          console.log('[useMonitoringData] ⚠️ No statistics cache - triggering refetch')
+          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'] })
+          return oldData
+        }
+
+        console.log('[useMonitoringData] 📊 Updating statistics cache:', {
+          old: oldData.statistics,
+          new: data.statistics
+        })
+
+        return {
+          ...oldData,
+          statistics: {
+            ...data.statistics,
+          },
+          timestamp: data.timestamp,
+        }
+      }
+    )
+
+    // 2. Update candidate status in cache
+    queryClient.setQueryData<SessionMonitoringDetails>(
+      ['monitoring', 'session', sessionId, 'details'],
+      (oldData) => {
+        if (!oldData) {
+          console.log('[useMonitoringData] ⚠️ No details cache - triggering refetch')
+          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
+          return oldData
+        }
+
+        console.log('[useMonitoringData] 👥 Updating candidate status in cache:', {
+          totalCandidates: oldData.candidates.length,
+          candidateId: data.candidateId,
+          candidateName: data.candidateName
+        })
+
+        // Find and update the candidate's status to PENDING
+        const updatedCandidates = oldData.candidates.map((c) => {
+          if (c.id === data.candidateId) {
+            console.log('[useMonitoringData] 🔄 Updating candidate status to PENDING:', data.candidateId)
+            return {
+              ...c,
+              status: 'PENDING' as CandidateStatus,
+            }
+          }
+          return c
+        })
+
+        console.log('[useMonitoringData] ✅ Candidate status updated successfully')
+
+        return {
+          ...oldData,
+          statistics: {
+            ...data.statistics,
+          },
+          candidates: updatedCandidates,
+          timestamp: data.timestamp,
+        }
+      }
+    )
+
+    // Schedule a lightweight refetch to reconcile with server truth
+    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'], exact: true })
+    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'], exact: true })
+  }, [sessionId, queryClient])
+
+  // Listen to exam:started WebSocket events for real-time updates
+  const handleExamStarted = useCallback((data: ExamStartedEvent) => {
+    console.log('[useMonitoringData] 📚 exam:started event received:', {
+      candidateId: data.candidateId,
+      sessionId: data.sessionId,
+      totalQuestions: data.totalQuestions,
+      totalAttempted: data.totalAttempted,
+      currentSessionId: sessionId,
+    })
+
+    // Only update if the event is for the current session
+    if (data.sessionId !== sessionId) {
+      console.log('[useMonitoringData] ⚠️ Event ignored - different session', {
+        eventSession: data.sessionId,
+        currentSession: sessionId
+      })
+      return
+    }
+
+    console.log('[useMonitoringData] ✅ Processing exam started event for current session')
+
+    // Update candidate's totalQuestions in cache
+    queryClient.setQueryData<SessionMonitoringDetails>(
+      ['monitoring', 'session', sessionId, 'details'],
+      (oldData) => {
+        if (!oldData) {
+          console.log('[useMonitoringData] ⚠️ No details cache - triggering refetch')
+          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
+          return oldData
+        }
+
+        console.log('[useMonitoringData] 📝 Updating candidate exam progress in cache:', {
+          candidateId: data.candidateId,
+          totalQuestions: data.totalQuestions,
+          totalAttempted: data.totalAttempted
+        })
+
+        // Find and update the candidate's totalQuestions and attempted
+        const updatedCandidates = oldData.candidates.map((c) => {
+          if (c.id === data.candidateId) {
+            console.log('[useMonitoringData] 🔄 Setting exam progress for candidate:', {
+              candidateId: data.candidateId,
+              totalQuestions: data.totalQuestions,
+              totalAttempted: data.totalAttempted
+            })
+            return {
+              ...c,
+              totalQuestions: data.totalQuestions,
+              attempted: data.totalAttempted, // Use actual attempted count from event
+            }
+          }
+          return c
+        })
+
+        console.log('[useMonitoringData] ✅ Candidate exam progress updated successfully')
+
+        return {
+          ...oldData,
+          candidates: updatedCandidates,
+        }
+      }
+    )
+  }, [sessionId, queryClient])
+
+  // Listen to exam:answerSubmitted WebSocket events for real-time progress updates
+  const handleAnswerSubmitted = useCallback((data: ExamAnswerSubmittedEvent) => {
+    console.log('[useMonitoringData] 📝 exam:answerSubmitted event received:', {
+      candidateId: data.candidateId,
+      sessionId: data.sessionId,
+      totalAttemptedQuestions: data.totalAttemptedQuestions,
+      totalQuestions: data.totalQuestions,
+      currentSessionId: sessionId,
+    })
+
+    // Only update if the event is for the current session
+    if (data.sessionId !== sessionId) {
+      console.log('[useMonitoringData] ⚠️ Event ignored - different session', {
+        eventSession: data.sessionId,
+        currentSession: sessionId
+      })
+      return
+    }
+
+    console.log('[useMonitoringData] ✅ Processing answer submitted event for current session')
+
+    // Update candidate's progress in cache
+    queryClient.setQueryData<SessionMonitoringDetails>(
+      ['monitoring', 'session', sessionId, 'details'],
+      (oldData) => {
+        if (!oldData) {
+          console.log('[useMonitoringData] ⚠️ No details cache - triggering refetch')
+          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
+          return oldData
+        }
+
+        console.log('[useMonitoringData] 📊 Updating candidate progress in cache:', {
+          candidateId: data.candidateId,
+          totalAttemptedQuestions: data.totalAttemptedQuestions,
+          totalQuestions: data.totalQuestions
+        })
+
+        // Find and update the candidate's progress
+        const updatedCandidates = oldData.candidates.map((c) => {
+          if (c.id === data.candidateId) {
+            console.log('[useMonitoringData] 🔄 Updating progress for candidate:', {
+              candidateId: data.candidateId,
+              attempted: data.totalAttemptedQuestions,
+              totalQuestions: data.totalQuestions
+            })
+            return {
+              ...c,
+              totalQuestions: data.totalQuestions,
+              attempted: data.totalAttemptedQuestions,
+            }
+          }
+          return c
+        })
+
+        console.log('[useMonitoringData] ✅ Candidate progress updated successfully')
+
+        return {
+          ...oldData,
+          candidates: updatedCandidates,
+        }
+      }
+    )
+  }, [sessionId, queryClient])
+
+  // Register WebSocket event listeners
+  useSocketEvent('candidate:login', handleCandidateLogin)
+  useSocketEvent('candidate:logout', handleCandidateLogout)
+  useSocketEvent('exam:started', handleExamStarted)
+  useSocketEvent('exam:answerSubmitted', handleAnswerSubmitted)
+
+  // Debug: Log when event listeners are registered
+  useEffect(() => {
+    console.log('[useMonitoringData] 📡 Registered listeners for candidate events', {
+      sessionId,
+      loginHandlerRegistered: !!handleCandidateLogin,
+      logoutHandlerRegistered: !!handleCandidateLogout,
+      examStartedHandlerRegistered: !!handleExamStarted,
+      answerSubmittedHandlerRegistered: !!handleAnswerSubmitted
+    })
+  }, [sessionId, handleCandidateLogin, handleCandidateLogout, handleExamStarted, handleAnswerSubmitted])
 
   const refetch = () => {
     refetchStats()

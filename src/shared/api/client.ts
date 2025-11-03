@@ -3,6 +3,7 @@ import { config } from '@/shared/config'
 
 export interface ApiResponse<T = unknown> {
   success: boolean
+  status: number
   data?: T
   error?: {
     message: string
@@ -90,10 +91,13 @@ class ApiClient {
     config: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response: AxiosResponse<ApiResponse<T>> = await this.instance.request(config)
-    console.log('[ApiClient] Response:', {
+    console.log('[ApiClient] Raw Response:', {
       url: config.url,
+      method: config.method,
       status: response.status,
-      data: response.data
+      fullData: response.data,
+      dataField: response.data.data,
+      success: response.data.success
     })
     return response.data
   }

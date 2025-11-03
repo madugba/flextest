@@ -179,14 +179,24 @@ export async function deleteCandidate(id: string): Promise<void> {
 /**
  * Import candidates in bulk
  * @param data Import candidates request
- * @returns Import result with count
+ * @returns Import result with success/failed counts and errors
  * @throws ApiError on validation error or server error
  */
 export async function importCandidates(
   data: ImportCandidatesRequest
-): Promise<{ message: string; count: number }> {
+): Promise<{
+  message: string
+  success: number
+  failed: number
+  errors: Array<{ index: number; error: string }>
+}> {
   try {
-    const response = await apiClient.post<{ message: string; count: number }>(
+    const response = await apiClient.post<{
+      message: string
+      success: number
+      failed: number
+      errors: Array<{ index: number; error: string }>
+    }>(
       '/candidates/import',
       data
     )
@@ -195,6 +205,99 @@ export async function importCandidates(
       throw new ApiError(
         response.error?.message || 'Failed to import candidates',
         response.error?.code || 'IMPORT_FAILED',
+        undefined,
+        response.error?.details
+      )
+    }
+
+    return response.data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Unknown error occurred',
+      'UNKNOWN_ERROR'
+    )
+  }
+}
+
+/**
+ * Logout a candidate from their current session
+ * @param candidateId - The candidate ID to logout
+ * @param reason - Optional reason for logout
+ * @returns Logout result with candidateId and message
+ * @throws ApiError on not found or server error
+ */
+export async function logoutCandidate(
+  candidateId: string,
+  reason?: string
+): Promise<{ candidateId: string; message: string }> {
+  try {
+    const response = await apiClient.post<{
+      candidateId: string
+      message: string
+    }>(
+      `/candidates/${candidateId}/logout`,
+      reason ? { reason } : {}
+    )
+
+    if (!response.success || !response.data) {
+      throw new ApiError(
+        response.error?.message || 'Failed to logout candidate',
+        response.error?.code || 'LOGOUT_FAILED',
+        undefined,
+        response.error?.details
+      )
+    }
+
+    return response.data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Unknown error occurred',
+      'UNKNOWN_ERROR'
+    )
+  }
+}
+
+/**
+ * Bulk logout multiple candidates from their current sessions
+ * @param candidateIds - Array of candidate IDs to logout
+ * @param reason - Optional reason for bulk logout
+ * @returns Bulk logout result with success/failed lists
+ * @throws ApiError on server error
+ */
+export async function bulkLogoutCandidates(
+  candidateIds: string[],
+  reason?: string
+): Promise<{
+  message: string
+  results: {
+    successful: string[]
+    failed: { candidateId: string; error: string }[]
+    totalProcessed: number
+  }
+}> {
+  try {
+    const response = await apiClient.post<{
+      message: string
+      results: {
+        successful: string[]
+        failed: { candidateId: string; error: string }[]
+        totalProcessed: number
+      }
+    }>(
+      '/candidates/bulk-logout',
+      { candidateIds, reason }
+    )
+
+    if (!response.success || !response.data) {
+      throw new ApiError(
+        response.error?.message || 'Failed to perform bulk logout',
+        response.error?.code || 'BULK_LOGOUT_FAILED',
         undefined,
         response.error?.details
       )

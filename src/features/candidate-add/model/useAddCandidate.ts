@@ -8,11 +8,13 @@ export function useAddCandidate(onSuccess?: () => void) {
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<CreateCandidateRequest>({
     email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
+    surname: '',
+    firstname: '',
+    othername: '',
     phone: '',
-    profileUrl: '',
+    sessionId: '',
+    picture: '',
+    subjects: [],
   })
 
   const handleOpen = () => {
@@ -25,11 +27,13 @@ export function useAddCandidate(onSuccess?: () => void) {
     setError(null)
     setFormData({
       email: '',
-      password: '',
-      firstName: '',
-      lastName: '',
+      surname: '',
+      firstname: '',
+      othername: '',
       phone: '',
-      profileUrl: '',
+      sessionId: '',
+      picture: '',
+      subjects: [],
     })
   }
 

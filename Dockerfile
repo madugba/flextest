@@ -14,8 +14,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm install --legacy-peer-deps
+# Install ALL dependencies (including dev) for build stage
+RUN npm ci --legacy-peer-deps
 
 # ============================================
 # Stage 2: Builder
@@ -42,7 +42,21 @@ RUN npm run build
 
 
 # ============================================
-# Stage 3: Production Runner
+# Stage 3: Production Dependencies
+# ============================================
+FROM node:22-alpine AS prod-deps
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install ONLY production dependencies
+RUN npm ci --omit=dev --legacy-peer-deps
+
+
+# ============================================
+# Stage 4: Production Runner
 # ============================================
 FROM node:22-alpine AS runner
 
@@ -64,8 +78,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder --chown=appuser:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=appuser:nodejs /app/package-lock.json* ./
 
-# Copy node_modules from builder
-COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
+# Copy ONLY production node_modules (much smaller!)
+COPY --from=prod-deps --chown=appuser:nodejs /app/node_modules ./node_modules
 
 # Copy built application
 COPY --from=builder --chown=appuser:nodejs /app/.next ./.next

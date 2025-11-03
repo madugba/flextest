@@ -1,4 +1,3 @@
-// Types
 export type {
   Candidate,
   CandidateStatus,
@@ -9,7 +8,6 @@ export type {
   ImportCandidatesRequest,
 } from './model/types'
 
-// API
 export {
   getAllCandidates,
   getCandidateById,
@@ -19,7 +17,6 @@ export {
   importCandidates,
 } from './api/candidateApi'
 
-// Helpers
 export {
   getCandidateFullName,
   getCandidateDisplayName,
@@ -33,7 +30,6 @@ export {
   formatCandidateLastLogin,
 } from './lib/helpers'
 
-// Validation
 export {
   createCandidateSchema,
   updateCandidateSchema,

@@ -125,8 +125,6 @@ export default function DashboardPage() {
   )
 }
 
-// Separate memoized sections to prevent unnecessary re-renders
-
 const SystemHealthSection = React.memo(({ system, connections }: {
   system: SystemMetrics | undefined
   connections: ConnectionMetrics | undefined
