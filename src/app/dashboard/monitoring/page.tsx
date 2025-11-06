@@ -52,6 +52,7 @@ import { useLogoutCandidate } from '@/features/monitoring/model/useLogoutCandida
 import { useBulkLogoutCandidates } from '@/features/monitoring/model/useBulkLogoutCandidates'
 import { useMetricsSocket } from '@/shared/hooks/useMetricsSocket'
 import { toast } from 'sonner'
+import { useTimer } from '@/features/monitoring/model/useTimer'
 
 interface StatCardProps {
   title: string
@@ -86,7 +87,7 @@ StatCard.displayName = 'StatCard'
  * Format candidate data for display
  */
 function formatCandidateForDisplay(
-  candidate: import('@/entities/monitoring').MonitoringCandidate,
+  candidate: import('@/entities/monitoring').MonitoringCandidate & { timeLeft?: number | null },
   sessionRemainingTime: string
 ) {
   // Use actual registration number (candidate ID)
@@ -113,7 +114,9 @@ function formatCandidateForDisplay(
     name,
     initials,
     clientInfo: candidate.clientInfo,
-    timeRemaining: sessionRemainingTime, // Use session time for now
+    timeRemaining: candidate.timeLeft != null
+      ? new Date((candidate.timeLeft || 0) * 1000).toISOString().substring(11, 19)
+      : sessionRemainingTime,
     attempted: candidate.attempted || 0, // Use actual value or 0
     totalQuestions: candidate.totalQuestions || 0, // Use actual value from exam:started event
     status: displayStatus,
@@ -154,6 +157,19 @@ function MonitoringContent() {
     isControlling,
     controlError,
   } = useMonitoringData(sessionId || undefined)
+
+  // Real-time timer via WebSocket (Redis-backed)
+  const { status: timerStatus, getTimeLeft, sessionRemaining } = useTimer(
+    sessionId || undefined,
+    selectedSession ? selectedSession.duration * 60 : undefined
+  )
+
+  const formatSeconds = (totalSeconds: number): string => {
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
+    return [hours, minutes, seconds].map((v) => String(v).padStart(2, '0')).join(':')
+  }
 
   // Subscribe to real-time metrics and connected clients via WebSocket
   const { connectedClients, isSubscribed } = useMetricsSocket()
@@ -441,14 +457,30 @@ function MonitoringContent() {
         {selectedSession && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Remaining Time */}
-            <StatCard
-              title="Remaining Time"
-              value={remainingTime}
-              icon={<Clock className="h-5 w-5" />}
-              borderColor="border-2 border-blue-100"
-              iconBgColor="bg-blue-100"
-              iconColor="text-blue-600"
-            />
+            <Card className="p-4 hover:shadow-md transition-shadow border-2 border-blue-100">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-gray-600">Remaining Time</p>
+                    {sessionRemaining > 0 ? (
+                      <span title="Real-time via WebSocket">
+                        <Wifi className="h-3 w-3 text-green-500" />
+                      </span>
+                    ) : (
+                      <span title="Polling via HTTP">
+                        <WifiOff className="h-3 w-3 text-gray-400" />
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {sessionRemaining > 0 ? formatSeconds(sessionRemaining) : remainingTime}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </Card>
 
             {/* Active Candidates */}
             <StatCard
@@ -697,13 +729,16 @@ function MonitoringContent() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-gray-400" />
-                              <span className={`text-sm font-mono ${
-                                candidate.timeRemaining === '00:00:00'
-                                  ? 'text-red-600 font-bold'
-                                  : 'text-gray-900'
-                              }`}>
-                                {candidate.timeRemaining}
-                              </span>
+                              {(() => {
+                                const seconds = getTimeLeft(candidate.id)
+                                const display = seconds !== undefined ? formatSeconds(seconds) : candidate.timeRemaining
+                                const danger = display === '00:00:00'
+                                return (
+                                  <span className={`text-sm font-mono ${danger ? 'text-red-600 font-bold' : 'text-gray-900'}`}>
+                                    {display}
+                                  </span>
+                                )
+                              })()}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
