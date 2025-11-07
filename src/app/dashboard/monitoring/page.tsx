@@ -52,7 +52,6 @@ import { useLogoutCandidate } from '@/features/monitoring/model/useLogoutCandida
 import { useBulkLogoutCandidates } from '@/features/monitoring/model/useBulkLogoutCandidates'
 import { useMetricsSocket } from '@/shared/hooks/useMetricsSocket'
 import { toast } from 'sonner'
-import { useTimer } from '@/features/monitoring/model/useTimer'
 
 interface StatCardProps {
   title: string
@@ -87,8 +86,7 @@ StatCard.displayName = 'StatCard'
  * Format candidate data for display
  */
 function formatCandidateForDisplay(
-  candidate: import('@/entities/monitoring').MonitoringCandidate & { timeLeft?: number | null },
-  sessionRemainingTime: string
+  candidate: import('@/entities/monitoring').MonitoringCandidate
 ) {
   // Use actual registration number (candidate ID)
   const registrationNumber = candidate.id
@@ -114,9 +112,6 @@ function formatCandidateForDisplay(
     name,
     initials,
     clientInfo: candidate.clientInfo,
-    timeRemaining: candidate.timeLeft != null
-      ? new Date((candidate.timeLeft || 0) * 1000).toISOString().substring(11, 19)
-      : sessionRemainingTime,
     attempted: candidate.attempted || 0, // Use actual value or 0
     totalQuestions: candidate.totalQuestions || 0, // Use actual value from exam:started event
     status: displayStatus,
@@ -158,12 +153,6 @@ function MonitoringContent() {
     controlError,
   } = useMonitoringData(sessionId || undefined)
 
-  // Real-time timer via WebSocket (Redis-backed)
-  const { status: timerStatus, getTimeLeft, sessionRemaining } = useTimer(
-    sessionId || undefined,
-    selectedSession ? selectedSession.duration * 60 : undefined
-  )
-
   const formatSeconds = (totalSeconds: number): string => {
     const hours = Math.floor(totalSeconds / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
@@ -182,7 +171,7 @@ function MonitoringContent() {
 
   // Filter and search candidates
   const filteredCandidates = candidates.filter((rawCandidate) => {
-    const candidate = formatCandidateForDisplay(rawCandidate, remainingTime)
+    const candidate = formatCandidateForDisplay(rawCandidate)
 
     // Filter by status
     if (filterStatus !== 'all' && candidate.status !== filterStatus) {
@@ -460,23 +449,12 @@ function MonitoringContent() {
             <Card className="p-4 hover:shadow-md transition-shadow border-2 border-blue-100">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-medium text-gray-600">Remaining Time</p>
-                    {sessionRemaining > 0 ? (
-                      <span title="Real-time via WebSocket">
-                        <Wifi className="h-3 w-3 text-green-500" />
-                      </span>
-                    ) : (
-                      <span title="Polling via HTTP">
-                        <WifiOff className="h-3 w-3 text-gray-400" />
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-xs font-medium text-gray-600">Remaining Time</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {sessionRemaining > 0 ? formatSeconds(sessionRemaining) : remainingTime}
+                    {remainingTime}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-between">
                   <Clock className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
@@ -664,9 +642,6 @@ function MonitoringContent() {
                         Client Info
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Time Remaining
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Progress
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -680,7 +655,7 @@ function MonitoringContent() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCandidates.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                           {candidates.length === 0
                             ? 'No candidates registered for this session'
                             : 'No candidates match your search criteria'}
@@ -688,7 +663,7 @@ function MonitoringContent() {
                       </tr>
                     ) : (
                       filteredCandidates.map((rawCandidate) => {
-                      const candidate = formatCandidateForDisplay(rawCandidate, remainingTime)
+                      const candidate = formatCandidateForDisplay(rawCandidate)
                       const progressPercentage = candidate.totalQuestions > 0
                         ? (candidate.attempted / candidate.totalQuestions) * 100
                         : 0
@@ -724,21 +699,6 @@ function MonitoringContent() {
                             <div className="flex items-center gap-2">
                               <Monitor className="h-4 w-4 text-gray-400" />
                               <span className="text-sm text-gray-600">{candidate.clientInfo}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              {(() => {
-                                const seconds = getTimeLeft(candidate.id)
-                                const display = seconds !== undefined ? formatSeconds(seconds) : candidate.timeRemaining
-                                const danger = display === '00:00:00'
-                                return (
-                                  <span className={`text-sm font-mono ${danger ? 'text-red-600 font-bold' : 'text-gray-900'}`}>
-                                    {display}
-                                  </span>
-                                )
-                              })()}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -936,7 +896,7 @@ function MonitoringContent() {
                     {filteredCandidates
                       .filter(c => selectedCandidates.has(c.id))
                       .map(c => {
-                        const candidate = formatCandidateForDisplay(c, remainingTime)
+                        const candidate = formatCandidateForDisplay(c)
                         return (
                           <li key={c.id} className="py-1">
                             • {candidate.name} ({candidate.registrationNumber})
