@@ -615,10 +615,18 @@ function MonitoringContent() {
             {/* Candidates Table */}
             <Card className="overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full table-fixed">
+                  <colgroup>
+                    <col className="w-[180px]" />
+                    <col className="w-[220px]" />
+                    <col className="w-[200px]" />
+                    <col className="w-[180px]" />
+                    <col className="w-[120px]" />
+                    <col className="w-[140px]" />
+                  </colgroup>
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -635,19 +643,19 @@ function MonitoringContent() {
                           <span title="Select all candidates">Registration #</span>
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Client Info
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Progress
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -655,7 +663,7 @@ function MonitoringContent() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCandidates.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                           {candidates.length === 0
                             ? 'No candidates registered for this session'
                             : 'No candidates match your search criteria'}
@@ -670,7 +678,7 @@ function MonitoringContent() {
 
                       return (
                         <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <input
                                 type="checkbox"
@@ -685,23 +693,23 @@ function MonitoringContent() {
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white text-xs font-medium">
                                   {candidate.initials}
                                 </span>
                               </div>
-                              <span className="text-sm font-medium text-gray-900">{candidate.name}</span>
+                              <span className="text-sm font-medium text-gray-900 truncate">{candidate.name}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4">
                             <div className="flex items-center gap-2">
-                              <Monitor className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">{candidate.clientInfo}</span>
+                              <Monitor className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-sm text-gray-600 truncate">{candidate.clientInfo}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="space-y-1">
                               <div className="flex items-center justify-between text-xs">
                                 <span className="text-gray-600">
@@ -719,14 +727,14 @@ function MonitoringContent() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <Badge
                               className={`${getStatusColor(candidate.status)} border capitalize`}
                             >
                               {candidate.status}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Button size="sm" variant="outline">
                                 <Eye className="h-4 w-4" />
