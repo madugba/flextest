@@ -34,13 +34,13 @@ export class ApiError extends Error {
   }
 }
 
-class ApiClient {
+export class ApiClient {
   private instance: AxiosInstance
 
   constructor(baseUrl: string) {
     this.instance = axios.create({
       baseURL: baseUrl,
-      timeout: 10000,
+      timeout: 20000,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -49,8 +49,11 @@ class ApiClient {
     // Request interceptor to add auth token
     this.instance.interceptors.request.use(
       (config) => {
-        // Add auth token if available
-        if (typeof window !== 'undefined') {
+        // Skip Authorization header for logout endpoint
+        const url = config.url || ''
+        const isLogout = /\/auth\/logout(\b|$)/.test(url)
+
+        if (!isLogout && typeof window !== 'undefined') {
           const token = localStorage.getItem('accessToken')
           if (token) {
             config.headers.Authorization = `Bearer ${token}`
@@ -91,14 +94,6 @@ class ApiClient {
     config: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response: AxiosResponse<ApiResponse<T>> = await this.instance.request(config)
-    console.log('[ApiClient] Raw Response:', {
-      url: config.url,
-      method: config.method,
-      status: response.status,
-      fullData: response.data,
-      dataField: response.data.data,
-      success: response.data.success
-    })
     return response.data
   }
 

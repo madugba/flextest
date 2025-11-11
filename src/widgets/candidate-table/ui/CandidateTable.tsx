@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import * as React from 'react'
 import { DataTable, type ColumnDef } from '@/shared/ui/data-table'
 import {
   DropdownMenu,
@@ -25,7 +26,15 @@ import { DeleteCandidateDialog } from '@/features/candidate-delete'
 import { CandidateDetailsDrawer } from '@/features/candidate-details'
 import { EditCandidateDialog } from '@/features/candidate-edit'
 import { useCandidateTable } from '../model/useCandidateTable'
-import { MoreVertical, Search } from 'lucide-react'
+import { MoreVertical, Search, Printer } from 'lucide-react'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/shared/ui/pagination'
 
 interface CandidateTableProps {
   onDeleteSuccess?: (message: string) => void
@@ -94,6 +103,7 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
     pagination,
     handleSearch,
     handleFilterStatus,
+    handlePageChange,
     refresh,
   } = useCandidateTable({ refreshTrigger })
 
@@ -108,6 +118,10 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
   const handleStatusChange = (value: string) => {
     setStatusFilter(value)
     handleFilterStatus(value === 'all' ? undefined : value)
+  }
+
+  const handlePrint = () => {
+    window.print()
   }
 
   const columns: ColumnDef<Candidate>[] = [
@@ -141,11 +155,55 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={row.status === 'APPROVED' ? 'default' : 'secondary'}>
-          {getCandidateStatusLabel(row.status)}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const status = row.status
+        const getStatusBadgeProps = () => {
+          switch (status) {
+            case 'APPROVED':
+              return {
+                variant: 'default' as const,
+                className: 'bg-green-500 text-white hover:bg-green-600 border-transparent',
+              }
+            case 'PENDING':
+              return {
+                variant: 'secondary' as const,
+                className: 'bg-yellow-500 text-white hover:bg-yellow-600 border-transparent',
+              }
+            case 'REJECTED':
+              return {
+                variant: 'destructive' as const,
+                className: 'bg-red-500 text-white hover:bg-red-600 border-transparent',
+              }
+            case 'SUBMITTED':
+              return {
+                variant: 'default' as const,
+                className: 'bg-blue-500 text-white hover:bg-blue-600 border-transparent',
+              }
+            case 'ACTIVE':
+              return {
+                variant: 'default' as const,
+                className: 'bg-emerald-500 text-white hover:bg-emerald-600 border-transparent',
+              }
+            case 'ACTIVATE':
+              return {
+                variant: 'outline' as const,
+                className: 'bg-purple-500 text-white hover:bg-purple-600 border-transparent',
+              }
+            default:
+              return {
+                variant: 'secondary' as const,
+                className: 'border-transparent',
+              }
+          }
+        }
+
+        const badgeProps = getStatusBadgeProps()
+        return (
+          <Badge variant={badgeProps.variant} className={badgeProps.className}>
+            {getCandidateStatusLabel(status)}
+          </Badge>
+        )
+      },
     },
     {
       accessorKey: 'isActive',
@@ -202,7 +260,7 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
   return (
     <div className="space-y-4">
       {/* Search and Filter Controls */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 no-print">
         <form onSubmit={handleSearchSubmit} className="flex-1 max-w-md">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -218,6 +276,7 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
         <select
           value={statusFilter}
           onChange={(e) => handleStatusChange(e.target.value)}
+          aria-label="Filter by status"
           className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="all">All Status</option>
@@ -226,7 +285,13 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
           <option value="REJECTED">Rejected</option>
           <option value="SUBMITTED">Submitted</option>
           <option value="ACTIVE">Active</option>
+          <option value="ACTIVATE">Activate</option>
         </select>
+
+        <Button onClick={handlePrint} variant="outline" size="default">
+          <Printer className="h-4 w-4 mr-2" />
+          Print
+        </Button>
       </div>
 
       {/* Table */}
@@ -236,17 +301,95 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
         emptyMessage="No candidates found"
       />
 
-      {/* Pagination Info */}
+      {/* Pagination */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <p>
-            Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total} candidates
-          </p>
-          <p>
-            Page {pagination.page} of {pagination.totalPages}
-          </p>
+        <div className="space-y-4 no-print">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <p>
+              Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+              {pagination.total} candidates
+            </p>
+          </div>
+
+          {pagination.totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (pagination.page > 1) {
+                        handlePageChange(pagination.page - 1)
+                      }
+                    }}
+                    className={
+                      pagination.page === 1
+                        ? 'pointer-events-none opacity-50 cursor-not-allowed'
+                        : 'cursor-pointer'
+                    }
+                    href="#"
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                  .filter((page) => {
+                    // Show first page, last page, current page, and pages around current
+                    const current = pagination.page
+                    return (
+                      page === 1 ||
+                      page === pagination.totalPages ||
+                      (page >= current - 1 && page <= current + 1)
+                    )
+                  })
+                  .map((page, index, array) => {
+                    // Add ellipsis if there's a gap
+                    const prevPage = array[index - 1]
+                    const showEllipsisBefore = prevPage && page - prevPage > 1
+
+                    return (
+                      <React.Fragment key={page}>
+                        {showEllipsisBefore && (
+                          <PaginationItem>
+                            <span className="px-3 py-2">...</span>
+                          </PaginationItem>
+                        )}
+                        <PaginationItem>
+                          <PaginationLink
+                            onClick={(e) => {
+                              e.preventDefault()
+                              handlePageChange(page)
+                            }}
+                            isActive={page === pagination.page}
+                            className="cursor-pointer"
+                            href="#"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </React.Fragment>
+                    )
+                  })}
+
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (pagination.page < pagination.totalPages) {
+                        handlePageChange(pagination.page + 1)
+                      }
+                    }}
+                    className={
+                      pagination.page === pagination.totalPages
+                        ? 'pointer-events-none opacity-50 cursor-not-allowed'
+                        : 'cursor-pointer'
+                    }
+                    href="#"
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       )}
     </div>

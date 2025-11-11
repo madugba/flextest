@@ -31,11 +31,21 @@ export function useCandidateTable(props?: UseCandidateTableProps) {
       setLoading(true)
       setError(null)
 
-      const result = await getAllCandidates(filters)
+      // Ensure filters are valid before making the request
+      const validFilters: CandidateFilters = {
+        ...filters,
+        // Only include status if it's a valid value
+        status: filters.status && ['PENDING', 'APPROVED', 'REJECTED', 'SUBMITTED', 'ACTIVE', 'ACTIVATE'].includes(filters.status)
+          ? filters.status
+          : undefined,
+      }
+
+      const result = await getAllCandidates(validFilters)
 
       setCandidates(result.candidates)
       setPagination(result.pagination)
     } catch (err: unknown) {
+      console.error('Error fetching candidates:', err)
       if (err instanceof ApiError) {
         setError(err.message)
       } else {
@@ -56,7 +66,7 @@ export function useCandidateTable(props?: UseCandidateTableProps) {
   }
 
   const handleFilterStatus = (status: string | undefined) => {
-    setFilters((prev) => ({ ...prev, status: status as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined, page: 1 }))
+    setFilters((prev) => ({ ...prev, status: status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUBMITTED' | 'ACTIVE' | 'ACTIVATE' | undefined, page: 1 }))
   }
 
   const handlePageChange = (page: number) => {

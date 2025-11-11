@@ -32,6 +32,7 @@ export async function getSessionDetails(sessionId: string): Promise<SessionMonit
   return response.data as SessionMonitoringDetails
 }
 
+
 /**
  * Control session (start, pause, resume, end)
  */

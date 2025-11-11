@@ -14,11 +14,14 @@ export default function CandidatesPage() {
 
   const handleSuccess = (message: string) => {
     toast.success(message)
-    setRefreshTrigger((prev) => prev + 1) // Trigger table refresh
+    setRefreshTrigger((prev) => prev + 1) 
   }
 
-  const handleImportSuccess = (count: number) => {
-    handleSuccess(`Successfully imported ${count} candidates!`)
+  const handleImportSuccess = async (count: number) => {
+    toast.success(`Successfully imported ${count} candidates!`)
+    // Add a small delay to ensure database is ready before refreshing
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    setRefreshTrigger((prev) => prev + 1)
   }
 
   return (
@@ -30,7 +33,7 @@ export default function CandidatesPage() {
       />
 
       <div className="p-6 space-y-6 pb-12">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center no-print">
           <div>
             <h1 className="text-3xl font-bold">Candidate Management</h1>
             <p className="text-muted-foreground mt-1">
@@ -49,6 +52,14 @@ export default function CandidatesPage() {
               </Button>
             </Link>
           </div>
+        </div>
+
+        {/* Print Header - Only visible when printing */}
+        <div className="hidden print:block text-2xl font-bold mb-4">
+          Candidate Management
+        </div>
+        <div className="hidden print:block text-xs text-gray-600 mb-4">
+          Printed on: {new Date().toLocaleString()}
         </div>
 
         <CandidateTable

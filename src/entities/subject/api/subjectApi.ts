@@ -22,9 +22,13 @@ export async function getSubjectsForSession(sessionId: string): Promise<Subject[
   return response.data || []
 }
 
+export async function getSubjectsWithQuestionsBySession(sessionId: string): Promise<Array<Subject & { questionCount: number }>> {
+  const response = await apiClient.get<Array<Subject & { questionCount: number }>>(`${BASE_URL}/with-questions/${sessionId}`)
+  return response.data || []
+}
+
 export async function createSubject(data: CreateSubjectRequest): Promise<Subject> {
   const response = await apiClient.post<Subject>(BASE_URL, data)
-  console.log('This is a sample response', response)
   if (!response.success) {
     throw new Error('Failed to create subject')
   }
