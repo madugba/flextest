@@ -61,12 +61,10 @@ export default function ExamSessionsPage() {
   const [selectedSession, setSelectedSession] = useState<ExamSession | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Import dialog state
   const [selectedConfigId, setSelectedConfigId] = useState('')
   const [selectedConfig, setSelectedConfig] = useState<APIConfiguration | null>(null)
   const [selectedClass, setSelectedClass] = useState('')
 
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -127,7 +125,7 @@ export default function ExamSessionsPage() {
     const config = apiConfigurations.find((c) => c.id === configId)
     if (config) {
       setSelectedConfig(config)
-      setSelectedClass('') // Reset class selection when config changes
+      setSelectedClass('')
     } else {
       setSelectedConfig(null)
       setSelectedClass('')
@@ -381,6 +379,9 @@ export default function ExamSessionsPage() {
             />
           </div>
           <select
+            title="Status Filter"
+            name="statusFilter"
+            aria-label="Status Filter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as SessionStatus | '')}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -531,6 +532,9 @@ export default function ExamSessionsPage() {
                     Date <span className="text-red-500">*</span>
                   </label>
                   <input
+                    title="Date"
+                    name="date"
+                    aria-label="Date"
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}

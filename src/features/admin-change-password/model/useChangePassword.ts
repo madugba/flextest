@@ -35,7 +35,6 @@ export function useChangePassword(onSuccess?: () => void) {
     try {
       setError(null)
 
-      // Validate
       const validationError = validatePasswordChange(formData)
       if (validationError) {
         setError(validationError)

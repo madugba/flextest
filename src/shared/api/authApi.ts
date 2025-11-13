@@ -40,16 +40,8 @@ export interface AuthResponse {
   data: User
 }
 
-/**
- * Admin login
- * @param credentials Login credentials (email and password)
- * @returns User data and JWT token
- * @throws ApiError on invalid credentials or server error
- */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   try {
-    // Backend returns the full LoginResponse structure directly
-    // apiClient.post returns ApiResponse<T>, but backend already wraps it
     const response = await apiClient.post<LoginData>('/auth/login', credentials)
 
     if (!response.success || !response.data) {
@@ -61,7 +53,6 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
       )
     }
 
-    // Return the full response structure expected by AuthContext
     return {
       success: response.success,
       message: 'Login successful',
@@ -78,11 +69,6 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   }
 }
 
-/**
- * Admin logout
- * Requires authentication token in header
- * @throws ApiError on logout failure
- */
 export async function logout(): Promise<void> {
   try {
     const response = await apiClient.post('/auth/logout', {})
@@ -104,12 +90,6 @@ export async function logout(): Promise<void> {
   }
 }
 
-/**
- * Get current authenticated user profile
- * Requires authentication token in header
- * @returns Current user data
- * @throws ApiError if not authenticated or fetch fails
- */
 export async function getCurrentUser(): Promise<User> {
   try {
     const response = await apiClient.get<User>('/auth/me')

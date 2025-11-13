@@ -34,23 +34,24 @@ export class ApiError extends Error {
   }
 }
 
-class ApiClient {
+export class ApiClient {
   private instance: AxiosInstance
 
   constructor(baseUrl: string) {
     this.instance = axios.create({
       baseURL: baseUrl,
-      timeout: 10000,
+      timeout: 20000,
       headers: {
         'Content-Type': 'application/json',
       },
     })
 
-    // Request interceptor to add auth token
     this.instance.interceptors.request.use(
       (config) => {
-        // Add auth token if available
-        if (typeof window !== 'undefined') {
+        const url = config.url || ''
+        const requiresAuth = !/\/auth\/logout(\b|$)/.test(url)
+
+        if (requiresAuth && typeof window !== 'undefined') {
           const token = localStorage.getItem('accessToken')
           if (token) {
             config.headers.Authorization = `Bearer ${token}`
@@ -63,12 +64,10 @@ class ApiClient {
       }
     )
 
-    // Response interceptor to handle API responses
     this.instance.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response) {
-          // Server responded with error
           const apiResponse = error.response.data as ApiResponse
           throw new ApiError(
             apiResponse.error?.message || 'An error occurred',
@@ -77,10 +76,8 @@ class ApiClient {
             apiResponse.error?.details
           )
         } else if (error.request) {
-          // Request was made but no response
           throw new ApiError('Network error: Unable to reach server', 'NETWORK_ERROR')
         } else {
-          // Something else happened
           throw new ApiError(error.message, 'UNKNOWN_ERROR')
         }
       }
@@ -91,14 +88,6 @@ class ApiClient {
     config: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response: AxiosResponse<ApiResponse<T>> = await this.instance.request(config)
-    console.log('[ApiClient] Raw Response:', {
-      url: config.url,
-      method: config.method,
-      status: response.status,
-      fullData: response.data,
-      dataField: response.data.data,
-      success: response.data.success
-    })
     return response.data
   }
 

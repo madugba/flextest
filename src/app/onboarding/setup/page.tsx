@@ -94,7 +94,6 @@ export default function OnboardingSetupPage() {
     setError('')
 
     try {
-      // Complete onboarding: Create center and admin atomically
       await completeOnboarding({
         centerName: centerData.centerName,
         address: centerData.address,

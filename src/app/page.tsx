@@ -14,17 +14,14 @@ export default function HomePage() {
       try {
         const centers = await getCenters()
 
-        // If empty array, redirect to onboarding
         if (centers.length === 0) {
           router.replace('/onboarding')
           return
         }
 
-        // Centers exist, redirect to login
         router.replace('/login')
       } catch (error) {
         console.error(error);
-        // Any error, redirect to error page
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
         router.push(`/error?message=${encodeURIComponent(errorMessage)}`)
       }

@@ -20,7 +20,6 @@ export default function ForgotPasswordPage() {
     setError('')
 
     try {
-      // TODO: Implement forgot password API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
       setSubmitted(true)
     } catch (err) {

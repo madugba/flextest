@@ -4,12 +4,10 @@
  */
 
 export interface ServerToClientEvents {
-  // Connection events
   connect: () => void;
   disconnect: (reason: string) => void;
   connect_error: (error: Error) => void;
 
-  // Metrics events
   'metrics:update': (data: MetricsUpdateData) => void;
   'clients:connected': (data: { connectedClients: number; timestamp: string }) => void;
   'clients:disconnected': (data: { connectedClients: number; timestamp: string }) => void;
@@ -18,32 +16,33 @@ export interface ServerToClientEvents {
   'exam:started': (data: ExamStartedEvent) => void;
   'exam:answerSubmitted': (data: ExamAnswerSubmittedEvent) => void;
 
-  // Session events
+  'timer:update': (data: TimerUpdateEvent) => void;
+  'timer:started': (data: TimerStateEvent) => void;
+  'timer:paused': (data: TimerStateEvent) => void;
+  'timer:resumed': (data: TimerStateEvent) => void;
+  'timer:stopped': (data: TimerStateEvent) => void;
+
   'session:update': (data: SessionUpdateData) => void;
 
-  // Candidate events
   'candidate:update': (data: CandidateUpdateData) => void;
 
-  // Error events
   error: (error: SocketError) => void;
 
-  // Ping/Pong for health check
   pong: () => void;
 }
 
 export interface ClientToServerEvents {
-  // Health check
   ping: () => void;
 
-  // Subscribe to updates
   'subscribe:metrics': () => void;
   'subscribe:session': (sessionId: string) => void;
   'subscribe:candidate': (candidateId: string) => void;
 
-  // Unsubscribe from updates
   'unsubscribe:metrics': () => void;
   'unsubscribe:session': (sessionId: string) => void;
   'unsubscribe:candidate': (candidateId: string) => void;
+
+  'timer:requestSnapshot': (sessionId: string) => void;
 }
 
 export interface MetricsUpdateData {
@@ -129,6 +128,22 @@ export interface ExamAnswerSubmittedEvent {
   totalAttemptedQuestions: number;
   totalQuestions: number;
   timestamp?: number;
+}
+
+export type TimerStatus = 'RUNNING' | 'PAUSED' | 'STOPPED';
+
+export interface TimerUpdateEvent {
+  sessionId: string;
+  remainingSeconds: number;
+  status: TimerStatus;
+  timestamp: number;
+}
+
+export interface TimerStateEvent {
+  sessionId: string;
+  status: TimerStatus;
+  remainingSeconds?: number;
+  timestamp: number;
 }
 
 export interface SocketError {

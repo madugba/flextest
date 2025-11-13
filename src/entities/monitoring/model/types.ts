@@ -1,28 +1,22 @@
 import type { CandidateStatus } from '@/entities/candidate'
 import type { SessionStatus } from '@/entities/exam-session'
 
-/**
- * Session Monitoring Statistics
- */
 export interface SessionMonitoringStats {
   sessionId: string
   sessionName: string
   sessionDate: string
-  sessionDuration: number // in minutes
+  sessionDuration: number
+  remainingTime: string
   sessionStatus: SessionStatus
-  remainingTime: string // formatted HH:MM:SS
   statistics: {
-    scheduled: number // total candidates
-    absent: number // candidates with status PENDING
-    active: number // candidates with status ACTIVE
-    submitted: number // candidates with status SUBMITTED
+    scheduled: number
+    absent: number
+    active: number
+    submitted: number
   }
   timestamp: string
 }
 
-/**
- * Monitoring Candidate Info
- */
 export interface MonitoringCandidate {
   id: string
   firstName: string
@@ -43,33 +37,21 @@ export interface MonitoringCandidate {
   attempted?: number
 }
 
-/**
- * Session Monitoring Details
- */
 export interface SessionMonitoringDetails extends SessionMonitoringStats {
   candidates: MonitoringCandidate[]
 }
 
-/**
- * Session Control Request
- */
 export interface SessionControlRequest {
   action: 'start' | 'pause' | 'resume' | 'end'
   reason?: string
 }
 
-/**
- * Session Control Response
- */
 export interface SessionControlResponse {
   success: boolean
   message: string
   sessionStatus: SessionStatus
 }
 
-/**
- * All Sessions Overview
- */
 export interface AllSessionsOverview {
   sessions: Array<{
     id: string
@@ -93,9 +75,6 @@ export interface AllSessionsOverview {
   timestamp: string
 }
 
-/**
- * Monitoring Update (WebSocket)
- */
 export interface MonitoringUpdate {
   sessionId: string
   stats: {

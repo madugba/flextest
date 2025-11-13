@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAllCandidates, type Candidate, type CandidateFilters } from '@/entities/candidate'
+import { getAllCandidates, type Candidate, type CandidateFilters, type CandidateStatus } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'
 
 interface UseCandidateTableProps {
@@ -31,11 +31,19 @@ export function useCandidateTable(props?: UseCandidateTableProps) {
       setLoading(true)
       setError(null)
 
-      const result = await getAllCandidates(filters)
+      const validFilters: CandidateFilters = {
+        ...filters,
+        status: filters.status && ['PENDING', 'APPROVED', 'REJECTED', 'SUBMITTED', 'ACTIVE'].includes(filters.status)
+          ? filters.status
+          : undefined,
+      }
+
+      const result = await getAllCandidates(validFilters)
 
       setCandidates(result.candidates)
       setPagination(result.pagination)
     } catch (err: unknown) {
+      console.error('Error fetching candidates:', err)
       if (err instanceof ApiError) {
         setError(err.message)
       } else {
@@ -56,7 +64,11 @@ export function useCandidateTable(props?: UseCandidateTableProps) {
   }
 
   const handleFilterStatus = (status: string | undefined) => {
-    setFilters((prev) => ({ ...prev, status: status as 'PENDING' | 'APPROVED' | 'REJECTED' | undefined, page: 1 }))
+    const normalizedStatus = status === 'ACTIVATE' ? 'ACTIVE' : status
+    const validStatus: CandidateStatus | undefined = normalizedStatus && ['PENDING', 'APPROVED', 'REJECTED', 'SUBMITTED', 'ACTIVE'].includes(normalizedStatus)
+      ? (normalizedStatus as CandidateStatus)
+      : undefined
+    setFilters((prev) => ({ ...prev, status: validStatus, page: 1 }))
   }
 
   const handlePageChange = (page: number) => {

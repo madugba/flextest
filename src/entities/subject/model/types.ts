@@ -26,3 +26,17 @@ export interface ImportSubjectsResponse {
   skipped: number
   errors: string[]
 }
+
+export interface ConfirmImportRequest {
+  subjects: Array<{
+    name: string
+    subjectid?: string
+    subjectname?: string
+  }>
+}
+
+export interface ConfirmImportResponse {
+  created: number
+  skipped: number
+  errors: string[]
+}

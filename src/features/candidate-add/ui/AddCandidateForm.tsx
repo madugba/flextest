@@ -39,14 +39,12 @@ export function AddCandidateForm({ onSuccess, onCancel }: AddCandidateFormProps)
     const file = e.target.files?.[0]
     if (file) {
       try {
-        // Show preview immediately
         const reader = new FileReader()
         reader.onloadend = () => {
           setImagePreview(reader.result as string)
         }
         reader.readAsDataURL(file)
 
-        // Upload to server
         const formData = new FormData()
         formData.append('file', file)
 
@@ -63,7 +61,6 @@ export function AddCandidateForm({ onSuccess, onCancel }: AddCandidateFormProps)
         setFormData(prev => ({ ...prev, picture: data.url }))
       } catch (err) {
         console.error('Error uploading image:', err)
-        // You might want to show an error to the user here
       }
     }
   }
@@ -93,14 +90,11 @@ export function AddCandidateForm({ onSuccess, onCancel }: AddCandidateFormProps)
         setImagePreview(dataUrl)
 
         try {
-          // Convert data URL to blob
           const response = await fetch(dataUrl)
           const blob = await response.blob()
 
-          // Create file from blob
           const file = new File([blob], `webcam_${Date.now()}.jpg`, { type: 'image/jpeg' })
 
-          // Upload to server
           const uploadFormData = new FormData()
           uploadFormData.append('file', file)
 
@@ -117,7 +111,6 @@ export function AddCandidateForm({ onSuccess, onCancel }: AddCandidateFormProps)
           setFormData(prev => ({ ...prev, picture: data.url }))
         } catch (err) {
           console.error('Error uploading captured photo:', err)
-          // You might want to show an error to the user here
         }
 
         stopWebcam()
@@ -134,7 +127,6 @@ export function AddCandidateForm({ onSuccess, onCancel }: AddCandidateFormProps)
   }
 
   const removeImage = async () => {
-    // Delete the file from server if it was uploaded
     if (formData.picture && formData.picture.startsWith('/passport/')) {
       try {
         const response = await fetch('/api/upload/passport', {
@@ -153,7 +145,6 @@ export function AddCandidateForm({ onSuccess, onCancel }: AddCandidateFormProps)
       }
     }
 
-    // Clear the preview and form data
     setImagePreview(null)
     setFormData(prev => ({ ...prev, picture: undefined }))
     if (fileInputRef.current) {

@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json(
         { error: 'Only image files are allowed' },
@@ -23,36 +22,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
+    const maxUploadSizeBytes = 5 * 1024 * 1024
+    if (file.size > maxUploadSizeBytes) {
       return NextResponse.json(
         { error: 'File size must be less than 5MB' },
         { status: 400 }
       )
     }
 
-    // Generate unique filename
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
     const extension = path.extname(file.name)
     const filename = `passport_${timestamp}_${randomString}${extension}`
 
-    // Get the bytes
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Define the upload path
     const publicPath = path.join(process.cwd(), 'public', 'passport')
     const filePath = path.join(publicPath, filename)
 
-    // Ensure the directory exists
     await mkdir(publicPath, { recursive: true })
 
-    // Write the file
     await writeFile(filePath, buffer)
 
-    // Return the public URL
     const fileUrl = `/passport/${filename}`
 
     return NextResponse.json({
@@ -91,11 +83,9 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Construct the file path
     const publicPath = path.join(process.cwd(), 'public', 'passport')
     const filePath = path.join(publicPath, filename)
 
-    // Check if file exists
     if (!existsSync(filePath)) {
       return NextResponse.json(
         { error: 'File not found' },
@@ -103,7 +93,6 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete the file
     await unlink(filePath)
 
     return NextResponse.json({

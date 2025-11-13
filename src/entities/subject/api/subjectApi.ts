@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/api/client'
-import type { Subject, CreateSubjectRequest, UpdateSubjectRequest, ImportSubjectsRequest, ImportSubjectsResponse } from '../model/types'
+import type { Subject, CreateSubjectRequest, UpdateSubjectRequest, ImportSubjectsRequest, ImportSubjectsResponse, ConfirmImportRequest, ConfirmImportResponse } from '../model/types'
 
 const BASE_URL = '/subjects'
 
@@ -22,9 +22,13 @@ export async function getSubjectsForSession(sessionId: string): Promise<Subject[
   return response.data || []
 }
 
+export async function getSubjectsWithQuestionsBySession(sessionId: string): Promise<Array<Subject & { questionCount: number }>> {
+  const response = await apiClient.get<Array<Subject & { questionCount: number }>>(`${BASE_URL}/with-questions/${sessionId}`)
+  return response.data || []
+}
+
 export async function createSubject(data: CreateSubjectRequest): Promise<Subject> {
   const response = await apiClient.post<Subject>(BASE_URL, data)
-  console.log('This is a sample response', response)
   if (!response.success) {
     throw new Error('Failed to create subject')
   }
@@ -55,7 +59,13 @@ export async function importSubjectsFromExcel(file: File): Promise<ImportSubject
   const formData = new FormData()
   formData.append('file', file)
 
-  // Note: This requires a different implementation for FormData
-  // For now, return a placeholder
   throw new Error('Excel import not yet implemented in frontend')
+}
+
+export async function confirmImportSubjects(data: ConfirmImportRequest): Promise<ConfirmImportResponse> {
+  const response = await apiClient.post<ConfirmImportResponse>(`${BASE_URL}/confirm-import`, data)
+  if (!response.data) {
+    throw new Error('Failed to import subjects')
+  }
+  return response.data
 }

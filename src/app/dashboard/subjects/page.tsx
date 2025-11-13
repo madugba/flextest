@@ -24,6 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/dialog'
+import { ImportSubjectsDialog } from '@/features/subject-import'
+import { Upload } from 'lucide-react'
 
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
@@ -32,6 +34,7 @@ export default function SubjectsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
   const [subjectName, setSubjectName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -69,7 +72,6 @@ export default function SubjectsPage() {
       })
       setShowCreateDialog(false)
       setSubjectName('')
-      // Clear search and refresh to show new subject
       setSearch('')
       await fetchSubjects('')
     } catch (error) {
@@ -144,9 +146,15 @@ export default function SubjectsPage() {
               Manage exam subjects
             </p>
           </div>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            Add Subject
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import Subject
+            </Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              Add Subject
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -299,6 +307,12 @@ export default function SubjectsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Import Subjects Dialog */}
+        <ImportSubjectsDialog
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+        />
       </div>
     </div>
   )

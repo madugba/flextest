@@ -51,7 +51,8 @@ import { useMonitoringData } from '@/features/monitoring/model/useMonitoringData
 import { useLogoutCandidate } from '@/features/monitoring/model/useLogoutCandidate'
 import { useBulkLogoutCandidates } from '@/features/monitoring/model/useBulkLogoutCandidates'
 import { useMetricsSocket } from '@/shared/hooks/useMetricsSocket'
-import { toast } from 'sonner'
+import { useTimer } from '@/features/monitoring/model/useTimer'
+
 
 interface StatCardProps {
   title: string
@@ -82,23 +83,12 @@ const StatCard = memo<StatCardProps>(({ title, value, icon, borderColor, iconBgC
 
 StatCard.displayName = 'StatCard'
 
-/**
- * Format candidate data for display
- */
 function formatCandidateForDisplay(
-  candidate: import('@/entities/monitoring').MonitoringCandidate,
-  sessionRemainingTime: string
+  candidate: import('@/entities/monitoring').MonitoringCandidate
 ) {
-  // Use actual registration number (candidate ID)
   const registrationNumber = candidate.id
-
-  // Full name
   const name = `${candidate.firstName} ${candidate.lastName}`
-
-  // Initials
   const initials = `${candidate.firstName[0]}${candidate.lastName[0]}`
-
-  // Map candidate status to display status
   const statusMap: Record<string, string> = {
     'PENDING': 'absent',
     'ACTIVE': 'active',
@@ -113,9 +103,8 @@ function formatCandidateForDisplay(
     name,
     initials,
     clientInfo: candidate.clientInfo,
-    timeRemaining: sessionRemainingTime, // Use session time for now
-    attempted: candidate.attempted || 0, // Use actual value or 0
-    totalQuestions: candidate.totalQuestions || 0, // Use actual value from exam:started event
+    attempted: candidate.attempted || 0,
+    totalQuestions: candidate.totalQuestions || 0,
     status: displayStatus,
     lastActivity: candidate.lastLoginAt ? new Date(candidate.lastLoginAt) : null,
   }
@@ -130,7 +119,6 @@ function MonitoringContent() {
   const [isAutoRefresh, setIsAutoRefresh] = useState(true)
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set())
 
-  // Confirmation modal states
   const [showStartConfirm, setShowStartConfirm] = useState(false)
   const [showPauseConfirm, setShowPauseConfirm] = useState(false)
   const [showResumeConfirm, setShowResumeConfirm] = useState(false)
@@ -142,11 +130,9 @@ function MonitoringContent() {
   } | null>(null)
   const [showBulkLogoutConfirm, setShowBulkLogoutConfirm] = useState(false)
 
-  // Fetch monitoring data with session ID from URL
   const {
     selectedSession,
     stats,
-    remainingTime,
     candidates,
     isLoading,
     error,
@@ -155,25 +141,25 @@ function MonitoringContent() {
     controlError,
   } = useMonitoringData(sessionId || undefined)
 
-  // Subscribe to real-time metrics and connected clients via WebSocket
+  const { elapsedHms } = useTimer({
+    sessionId,
+    sessionStatus: selectedSession?.status,
+    enableLocalTick: true,
+  })
+
   const { connectedClients, isSubscribed } = useMetricsSocket()
 
-  // Logout candidate mutation
   const logoutMutation = useLogoutCandidate(sessionId || undefined)
 
-  // Bulk logout mutation
   const bulkLogoutMutation = useBulkLogoutCandidates(sessionId || undefined)
 
-  // Filter and search candidates
   const filteredCandidates = candidates.filter((rawCandidate) => {
-    const candidate = formatCandidateForDisplay(rawCandidate, remainingTime)
+    const candidate = formatCandidateForDisplay(rawCandidate)
 
-    // Filter by status
     if (filterStatus !== 'all' && candidate.status !== filterStatus) {
       return false
     }
 
-    // Search by name or registration number
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       const nameMatch = candidate.name.toLowerCase().includes(query)
@@ -186,7 +172,6 @@ function MonitoringContent() {
     return true
   })
 
-  // Handle session control actions - show confirmation modals
   const handleStartExam = () => {
     if (!selectedSession) return
     setShowStartConfirm(true)
@@ -207,7 +192,6 @@ function MonitoringContent() {
     setShowEndConfirm(true)
   }
 
-  // Actual control actions after confirmation
   const confirmStartExam = () => {
     controlSession({ action: 'start' })
     setShowStartConfirm(false)
@@ -228,7 +212,6 @@ function MonitoringContent() {
     setShowEndConfirm(false)
   }
 
-  // Handle candidate logout
   const handleLogoutCandidate = (candidateId: string, candidateName: string) => {
     setSelectedCandidateForLogout({ id: candidateId, name: candidateName })
     setShowLogoutConfirm(true)
@@ -251,7 +234,6 @@ function MonitoringContent() {
     )
   }
 
-  // Handle bulk logout confirmation
   const confirmBulkLogout = () => {
     const candidateIds = Array.from(selectedCandidates)
 
@@ -263,25 +245,21 @@ function MonitoringContent() {
       {
         onSuccess: () => {
           setShowBulkLogoutConfirm(false)
-          setSelectedCandidates(new Set()) // Clear selection after bulk logout
+          setSelectedCandidates(new Set())
         },
       }
     )
   }
 
-  // Handle select all checkbox
   const handleSelectAll = () => {
     if (selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0) {
-      // If all are selected, deselect all
       setSelectedCandidates(new Set())
     } else {
-      // Select all visible candidates
       const allIds = new Set(filteredCandidates.map(c => c.id))
       setSelectedCandidates(allIds)
     }
   }
 
-  // Handle individual checkbox selection
   const handleSelectCandidate = (candidateId: string) => {
     const newSelected = new Set(selectedCandidates)
     if (newSelected.has(candidateId)) {
@@ -292,14 +270,11 @@ function MonitoringContent() {
     setSelectedCandidates(newSelected)
   }
 
-  // Check if all visible candidates are selected
   const isAllSelected = filteredCandidates.length > 0 &&
     filteredCandidates.every(c => selectedCandidates.has(c.id))
 
-  // Check if some but not all are selected (indeterminate state)
   const isIndeterminate = selectedCandidates.size > 0 && !isAllSelected
 
-  // Determine which control buttons to show based on session status
   const canStart = selectedSession?.status === 'SCHEDULED'
   const canPause = selectedSession?.status === 'ACTIVE'
   const canResume = selectedSession?.status === 'SCHEDULED' && stats.active > 0
@@ -340,7 +315,6 @@ function MonitoringContent() {
               {isAutoRefresh ? 'Auto Refresh On' : 'Auto Refresh Off'}
             </Button>
 
-            {/* Start Exam Button - Show when session is SCHEDULED */}
             {canStart && (
               <Button
                 size="sm"
@@ -354,7 +328,6 @@ function MonitoringContent() {
               </Button>
             )}
 
-            {/* Resume Exam Button - Show when session is paused but has active candidates */}
             {canResume && (
               <Button
                 size="sm"
@@ -368,7 +341,6 @@ function MonitoringContent() {
               </Button>
             )}
 
-            {/* Pause Exam Button - Show when session is ACTIVE */}
             {canPause && (
               <Button
                 size="sm"
@@ -382,7 +354,6 @@ function MonitoringContent() {
               </Button>
             )}
 
-            {/* End Exam Button - Show when session is ACTIVE */}
             {canEnd && (
               <Button
                 size="sm"
@@ -398,7 +369,6 @@ function MonitoringContent() {
           </div>
         </div>
 
-        {/* Error Display */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             <p className="font-medium">Error loading monitoring data</p>
@@ -406,7 +376,6 @@ function MonitoringContent() {
           </div>
         )}
 
-        {/* Control Error Display */}
         {controlError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             <p className="font-medium">Error controlling session</p>
@@ -414,14 +383,12 @@ function MonitoringContent() {
           </div>
         )}
 
-        {/* Loading State */}
         {isLoading && !selectedSession && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
 
-        {/* No Session ID in URL */}
         {!isLoading && !sessionId && (
           <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
             <p className="font-medium">No session ID provided</p>
@@ -429,7 +396,6 @@ function MonitoringContent() {
           </div>
         )}
 
-        {/* Session Not Found */}
         {!isLoading && sessionId && !selectedSession && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             <p className="font-medium">Session not found</p>
@@ -437,20 +403,22 @@ function MonitoringContent() {
           </div>
         )}
 
-        {/* Statistics Cards - Only show when session is selected */}
         {selectedSession && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Remaining Time */}
-            <StatCard
-              title="Remaining Time"
-              value={remainingTime}
-              icon={<Clock className="h-5 w-5" />}
-              borderColor="border-2 border-blue-100"
-              iconBgColor="bg-blue-100"
-              iconColor="text-blue-600"
-            />
+            <Card className="p-4 hover:shadow-md transition-shadow border-2 border-blue-100">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-gray-600">Elapsed Time</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {elapsedHms}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-between">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </Card>
 
-            {/* Active Candidates */}
             <StatCard
               title="Active Candidates"
               value={stats.active}
@@ -460,7 +428,6 @@ function MonitoringContent() {
               iconColor="text-green-600"
             />
 
-            {/* Scheduled (Total Candidates) */}
             <StatCard
               title="Scheduled"
               value={stats.scheduled}
@@ -469,7 +436,6 @@ function MonitoringContent() {
               iconColor="text-cyan-600"
             />
 
-            {/* Absent */}
             <StatCard
               title="Absent"
               value={stats.absent}
@@ -478,7 +444,6 @@ function MonitoringContent() {
               iconColor="text-gray-600"
             />
 
-            {/* Submitted */}
             <StatCard
               title="Submitted"
               value={stats.submitted}
@@ -487,7 +452,6 @@ function MonitoringContent() {
               iconColor="text-blue-600"
             />
 
-            {/* Connected Clients - Real-time via WebSocket */}
             <Card className="p-4 hover:shadow-md transition-shadow border-2 border-purple-100">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -504,7 +468,6 @@ function MonitoringContent() {
                     )}
                   </div>
                   <p className="text-2xl font-bold text-gray-900">
-                    {/* Subtract 1 to exclude the monitoring dashboard connection */}
                     {Math.max(0, connectedClients - 1)}
                   </p>
                 </div>
@@ -514,7 +477,6 @@ function MonitoringContent() {
               </div>
             </Card>
 
-            {/* Average Progress - Placeholder (not in requirements) */}
             <Card className="p-4 hover:shadow-md transition-shadow border-2 border-orange-100">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -527,7 +489,6 @@ function MonitoringContent() {
               </div>
             </Card>
 
-            {/* Flagged - Placeholder (not in requirements) */}
             <Card className="p-4 hover:shadow-md transition-shadow border-2 border-red-100">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -542,7 +503,6 @@ function MonitoringContent() {
           </div>
         )}
 
-        {/* Actions and Filters - Only show when session is selected */}
         {selectedSession && (
           <>
             <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -602,13 +562,20 @@ function MonitoringContent() {
               </div>
             </div>
 
-            {/* Candidates Table */}
             <Card className="overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full table-fixed">
+                  <colgroup>
+                    <col className="w-[180px]" />
+                    <col className="w-[220px]" />
+                    <col className="w-[200px]" />
+                    <col className="w-[180px]" />
+                    <col className="w-[120px]" />
+                    <col className="w-[140px]" />
+                  </colgroup>
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -625,22 +592,19 @@ function MonitoringContent() {
                           <span title="Select all candidates">Registration #</span>
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Client Info
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Time Remaining
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Progress
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -648,7 +612,7 @@ function MonitoringContent() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCandidates.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                           {candidates.length === 0
                             ? 'No candidates registered for this session'
                             : 'No candidates match your search criteria'}
@@ -656,14 +620,14 @@ function MonitoringContent() {
                       </tr>
                     ) : (
                       filteredCandidates.map((rawCandidate) => {
-                      const candidate = formatCandidateForDisplay(rawCandidate, remainingTime)
+                      const candidate = formatCandidateForDisplay(rawCandidate)
                       const progressPercentage = candidate.totalQuestions > 0
                         ? (candidate.attempted / candidate.totalQuestions) * 100
                         : 0
 
                       return (
                         <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <input
                                 type="checkbox"
@@ -678,35 +642,23 @@ function MonitoringContent() {
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white text-xs font-medium">
                                   {candidate.initials}
                                 </span>
                               </div>
-                              <span className="text-sm font-medium text-gray-900">{candidate.name}</span>
+                              <span className="text-sm font-medium text-gray-900 truncate">{candidate.name}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4">
                             <div className="flex items-center gap-2">
-                              <Monitor className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">{candidate.clientInfo}</span>
+                              <Monitor className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-sm text-gray-600 truncate">{candidate.clientInfo}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              <span className={`text-sm font-mono ${
-                                candidate.timeRemaining === '00:00:00'
-                                  ? 'text-red-600 font-bold'
-                                  : 'text-gray-900'
-                              }`}>
-                                {candidate.timeRemaining}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="space-y-1">
                               <div className="flex items-center justify-between text-xs">
                                 <span className="text-gray-600">
@@ -724,14 +676,14 @@ function MonitoringContent() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <Badge
                               className={`${getStatusColor(candidate.status)} border capitalize`}
                             >
                               {candidate.status}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Button size="sm" variant="outline">
                                 <Eye className="h-4 w-4" />
@@ -762,7 +714,6 @@ function MonitoringContent() {
         )}
       </div>
 
-      {/* Start Exam Confirmation Dialog */}
       <AlertDialog open={showStartConfirm} onOpenChange={setShowStartConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -780,7 +731,6 @@ function MonitoringContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Pause Exam Confirmation Dialog */}
       <AlertDialog open={showPauseConfirm} onOpenChange={setShowPauseConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -798,7 +748,6 @@ function MonitoringContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Resume Exam Confirmation Dialog */}
       <AlertDialog open={showResumeConfirm} onOpenChange={setShowResumeConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -816,7 +765,6 @@ function MonitoringContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* End Exam Confirmation Dialog */}
       <AlertDialog open={showEndConfirm} onOpenChange={setShowEndConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -838,7 +786,6 @@ function MonitoringContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Logout Candidate Confirmation Dialog */}
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -873,7 +820,6 @@ function MonitoringContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk Logout Confirmation Dialog */}
       <AlertDialog open={showBulkLogoutConfirm} onOpenChange={setShowBulkLogoutConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -901,7 +847,7 @@ function MonitoringContent() {
                     {filteredCandidates
                       .filter(c => selectedCandidates.has(c.id))
                       .map(c => {
-                        const candidate = formatCandidateForDisplay(c, remainingTime)
+                        const candidate = formatCandidateForDisplay(c)
                         return (
                           <li key={c.id} className="py-1">
                             • {candidate.name} ({candidate.registrationNumber})

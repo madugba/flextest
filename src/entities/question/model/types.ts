@@ -2,7 +2,7 @@ export type AnswerOption = 'A' | 'B' | 'C' | 'D'
 
 export interface Question {
   id: string
-  question: string // Large formatted text with HTML and mathematical formulas
+  question: string
   optionA: string
   optionB: string
   optionC: string

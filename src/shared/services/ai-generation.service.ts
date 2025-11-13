@@ -19,20 +19,16 @@ export interface GeneratedQuestion {
   answer: 'A' | 'B' | 'C' | 'D';
 }
 
-/**
- * Simple Circuit Breaker for AI calls
- */
 class CircuitBreaker {
   private failures = 0;
   private lastFailTime = 0;
   private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
   private readonly failureThreshold = 3;
-  private readonly recoveryTimeout = 30000; // 30 seconds
+  private readonly recoveryTimeoutMs = 30_000;
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
-    // Check if circuit is open
     if (this.state === 'OPEN') {
-      if (Date.now() - this.lastFailTime < this.recoveryTimeout) {
+      if (Date.now() - this.lastFailTime < this.recoveryTimeoutMs) {
         throw new Error('Service temporarily unavailable. Please try again later.');
       }
       this.state = 'HALF_OPEN';
@@ -79,9 +75,6 @@ function getCircuitBreaker(modelId: string): CircuitBreaker {
   return circuitBreakers.get(modelId)!;
 }
 
-/**
- * Build prompt for AI
- */
 function buildPrompt(request: GenerateQuestionsRequest): string {
   const difficultyDescriptions = {
     easy: 'beginner-level students, testing fundamental concepts and basic understanding',
@@ -123,19 +116,19 @@ FORMAT YOUR RESPONSE AS VALID JSON:
 Generate ${request.numQuestions} questions now. Ensure the JSON is valid and properly formatted.`;
 }
 
-/**
- * Parse and validate AI response
- */
+function stripCodeFences(payload: string): string {
+  let result = payload.trim();
+  if (result.startsWith('```json')) {
+    result = result.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+  } else if (result.startsWith('```')) {
+    result = result.replace(/```\n?/g, '').replace(/```\n?$/g, '');
+  }
+  return result;
+}
+
 function parseAIResponse(content: string): GeneratedQuestion[] {
   try {
-    // Remove markdown code blocks if present
-    let jsonContent = content.trim();
-    if (jsonContent.startsWith('```json')) {
-      jsonContent = jsonContent.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
-    } else if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/```\n?/g, '').replace(/```\n?$/g, '');
-    }
-
+    const jsonContent = stripCodeFences(content);
     const parsed = JSON.parse(jsonContent);
     const questions: unknown[] = parsed.questions || [];
 
@@ -143,24 +136,18 @@ function parseAIResponse(content: string): GeneratedQuestion[] {
       throw new Error('No questions found in AI response');
     }
 
-    // Validate each question
     return questions.map((q, index) => {
-      // Type guard to ensure q is an object with expected properties
       if (typeof q !== 'object' || q === null) {
         throw new Error(`Question ${index + 1} is not a valid object`);
       }
-
       const question = q as Record<string, unknown>;
-
       if (!question.question || !question.optionA || !question.optionB || !question.optionC || !question.optionD || !question.answer) {
         throw new Error(`Question ${index + 1} is missing required fields`);
       }
-
       const answer = String(question.answer).toUpperCase();
       if (!['A', 'B', 'C', 'D'].includes(answer)) {
         throw new Error(`Question ${index + 1} has invalid answer: ${answer}`);
       }
-
       return {
         question: String(question.question).trim(),
         optionA: String(question.optionA).trim(),
@@ -177,26 +164,21 @@ function parseAIResponse(content: string): GeneratedQuestion[] {
   }
 }
 
-/**
- * Generate questions using OpenAI
- */
 async function generateWithOpenAI(
   model: AIModelConfiguration,
   request: GenerateQuestionsRequest
 ): Promise<GeneratedQuestion[]> {
   const openai = new OpenAI({
     apiKey: model.apiKey,
-    dangerouslyAllowBrowser: true, // Required for client-side usage
+    dangerouslyAllowBrowser: true,
   });
 
   const config = MODEL_CONFIGS.OPENAI;
   const prompt = buildPrompt(request);
-
-  // Normalize model name to lowercase
-  const modelName = (model.modelName || 'gpt-4-turbo-preview').toLowerCase().trim();
+  const normalizedModelName = (model.modelName || 'gpt-4-turbo-preview').toLowerCase().trim();
 
   const completion = await openai.chat.completions.create({
-    model: modelName,
+    model: normalizedModelName,
     messages: [
       {
         role: 'system',
@@ -220,31 +202,23 @@ async function generateWithOpenAI(
   return parseAIResponse(content);
 }
 
-/**
- * Generate questions using Google Gemini
- */
 async function generateWithGemini(
   model: AIModelConfiguration,
   request: GenerateQuestionsRequest
 ): Promise<GeneratedQuestion[]> {
   const genAI = new GoogleGenerativeAI(model.apiKey);
-
-  // Normalize model name to lowercase to match Gemini API expectations
-  // Valid models (2025): gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite
-  // Legacy models (deprecated April 2025): gemini-pro, gemini-1.5-pro, gemini-1.5-flash
-  let modelName = (model.modelName || 'gemini-2.5-flash').toLowerCase().trim();
-
-  // Auto-migrate deprecated model names to current equivalents
-  const modelMigrations: Record<string, string> = {
-    'gemini': 'gemini-2.5-flash',
+  const geminiDefaultModel = 'gemini-2.5-flash';
+  const geminiModelMigrations: Record<string, string> = {
+    gemini: 'gemini-2.5-flash',
     'gemini-pro': 'gemini-2.5-pro',
     'gemini-1.5-pro': 'gemini-2.5-pro',
     'gemini-1.5-flash': 'gemini-2.5-flash',
   };
+  let modelName = (model.modelName || geminiDefaultModel).toLowerCase().trim();
 
-  if (modelMigrations[modelName]) {
-    console.warn(`[Gemini] Migrating deprecated model "${modelName}" to "${modelMigrations[modelName]}"`);
-    modelName = modelMigrations[modelName];
+  if (geminiModelMigrations[modelName]) {
+    console.warn(`[Gemini] Migrating deprecated model "${modelName}" to "${geminiModelMigrations[modelName]}"`);
+    modelName = geminiModelMigrations[modelName];
   }
 
   const geminiModel = genAI.getGenerativeModel({
@@ -272,9 +246,6 @@ async function generateWithGemini(
   return parseAIResponse(content);
 }
 
-/**
- * Generate questions using DeepSeek (OpenAI-compatible)
- */
 async function generateWithDeepSeek(
   model: AIModelConfiguration,
   request: GenerateQuestionsRequest
@@ -287,12 +258,10 @@ async function generateWithDeepSeek(
 
   const config = MODEL_CONFIGS.DEEPSEEK;
   const prompt = buildPrompt(request);
-
-  // Normalize model name to lowercase
-  const modelName = (model.modelName || 'deepseek-chat').toLowerCase().trim();
+  const normalizedModelName = (model.modelName || 'deepseek-chat').toLowerCase().trim();
 
   const completion = await openai.chat.completions.create({
-    model: modelName,
+    model: normalizedModelName,
     messages: [
       {
         role: 'system',
@@ -316,9 +285,6 @@ async function generateWithDeepSeek(
   return parseAIResponse(content);
 }
 
-/**
- * Main function to generate questions
- */
 export async function generateQuestions(
   request: GenerateQuestionsRequest
 ): Promise<GeneratedQuestion[]> {

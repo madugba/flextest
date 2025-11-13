@@ -103,7 +103,6 @@ export async function getQuestionCount(
   if (subjectId) params.append('subjectId', subjectId)
   if (sessionId) params.append('sessionId', sessionId)
 
-  // Add cache-busting parameter to force fresh data
   if (bypassCache) {
     params.append('_t', Date.now().toString())
   }
@@ -128,7 +127,6 @@ export async function getQuestionsBySubjectAndSession(
     sessionId,
   })
 
-  // Add cache-busting parameter to force fresh data
   if (bypassCache) {
     params.append('_t', Date.now().toString())
   }
@@ -139,19 +137,16 @@ export async function getQuestionsBySubjectAndSession(
   console.log('[getQuestionsBySubjectAndSession] Is array?:', Array.isArray(response.data))
   console.log('[getQuestionsBySubjectAndSession] Data type:', typeof response.data)
 
-  // Handle case where data might be undefined or null
   if (!response.data) {
     console.warn('[getQuestionsBySubjectAndSession] Data is null/undefined, returning empty array')
     return []
   }
 
-  // If data is already an array, return it
   if (Array.isArray(response.data)) {
     console.log('[getQuestionsBySubjectAndSession] Data is array, returning:', response.data.length, 'items')
     return response.data
   }
 
-  // If data is an object with numeric keys, convert to array
   if (typeof response.data === 'object') {
     console.warn('[getQuestionsBySubjectAndSession] Data is object, converting to array...')
     const dataArray = Object.values(response.data)
@@ -159,7 +154,6 @@ export async function getQuestionsBySubjectAndSession(
     return dataArray as Question[]
   }
 
-  // Fallback: return empty array
   console.error('[getQuestionsBySubjectAndSession] Unexpected data format:', response.data)
   return []
 }

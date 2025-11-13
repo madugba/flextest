@@ -19,7 +19,6 @@ export function useEditCandidate(onSuccess?: () => void) {
     subjects: [],
   })
 
-  // Load subjects on mount
   useEffect(() => {
     const loadSubjects = async () => {
       try {
@@ -32,7 +31,6 @@ export function useEditCandidate(onSuccess?: () => void) {
     loadSubjects()
   }, [])
 
-  // Update formData.subjects when selectedSubjects changes
   useEffect(() => {
     setFormData(prev => ({ ...prev, subjects: selectedSubjects }))
   }, [selectedSubjects])
@@ -46,11 +44,9 @@ export function useEditCandidate(onSuccess?: () => void) {
       const data = await getCandidateById(candidateId)
       setCandidate(data)
 
-      // Extract current subject IDs
       const currentSubjects = data.subjectCombinations?.map(combo => combo.subject.id) || []
       setSelectedSubjects(currentSubjects)
 
-      // Initialize form with candidate data
       setFormData({
         email: data.email || '',
         phone: data.phone || '',
@@ -95,7 +91,6 @@ export function useEditCandidate(onSuccess?: () => void) {
   const handleSubmit = async () => {
     if (!candidate) return
 
-    // Validate subject selection
     if (selectedSubjects.length === 0) {
       setError('Please select at least one subject')
       return
@@ -110,7 +105,6 @@ export function useEditCandidate(onSuccess?: () => void) {
       setError(null)
       setIsLoading(true)
 
-      // Prepare data for submission
       const submitData: UpdateCandidateRequest = {
         email: formData.email?.trim() || undefined,
         phone: formData.phone?.trim() || undefined,

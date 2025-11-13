@@ -31,6 +31,12 @@ export async function getAllCandidates(
     const response = await apiClient.get<CandidatePaginationResponse>(url)
 
     if (!response.success || !response.data) {
+      console.error('Failed to fetch candidates:', {
+        url,
+        error: response.error,
+        success: response.success,
+        data: response.data,
+      })
       throw new ApiError(
         response.error?.message || 'Failed to fetch candidates',
         response.error?.code || 'FETCH_FAILED',
@@ -59,7 +65,7 @@ export async function getAllCandidates(
  */
 export async function getCandidateById(id: string): Promise<Candidate> {
   try {
-    const response = await apiClient.get<Candidate>(`/candidates/${id}`)
+    const response = await apiClient.get<Candidate>(`/candidates/${encodeURIComponent(id)}`)
 
     if (!response.success || !response.data) {
       throw new ApiError(
@@ -125,7 +131,7 @@ export async function updateCandidate(
   data: UpdateCandidateRequest
 ): Promise<Candidate> {
   try {
-    const response = await apiClient.patch<Candidate>(`/candidates/${id}`, data)
+    const response = await apiClient.patch<Candidate>(`/candidates/${encodeURIComponent(id)}`, data)
 
     if (!response.success || !response.data) {
       throw new ApiError(
@@ -155,7 +161,7 @@ export async function updateCandidate(
  */
 export async function deleteCandidate(id: string): Promise<void> {
   try {
-    const response = await apiClient.delete<{ message: string }>(`/candidates/${id}`)
+    const response = await apiClient.delete<{ message: string }>(`/candidates/${encodeURIComponent(id)}`)
 
     if (!response.success) {
       throw new ApiError(
@@ -238,7 +244,7 @@ export async function logoutCandidate(
       candidateId: string
       message: string
     }>(
-      `/candidates/${candidateId}/logout`,
+      `/candidates/${encodeURIComponent(candidateId)}/logout`,
       reason ? { reason } : {}
     )
 
