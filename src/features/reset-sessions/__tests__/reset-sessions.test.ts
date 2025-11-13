@@ -1,6 +1,6 @@
 describe('Reset Sessions API', () => {
   const mockFetch = jest.fn()
-  global.fetch = mockFetch as any
+  global.fetch = mockFetch as unknown as typeof fetch
 
   beforeEach(() => {
     mockFetch.mockClear()

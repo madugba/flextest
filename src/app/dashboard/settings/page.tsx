@@ -57,7 +57,6 @@ export default function SettingsPage() {
     isSchoolPortal: false
   })
 
-  // AI Model state
   const [aiModels, setAiModels] = useState<AIModelConfiguration[]>([])
   const [editingAIModelId, setEditingAIModelId] = useState<string | null>(null)
   const [isCreatingAIModel, setIsCreatingAIModel] = useState(false)
@@ -70,7 +69,6 @@ export default function SettingsPage() {
     centerId: ''
   })
 
-  // Score Configuration state
   const [scoreConfigurations, setScoreConfigurations] = useState<ScoreConfiguration[]>([])
   const [editingScoreId, setEditingScoreId] = useState<string | null>(null)
   const [scoreForm, setScoreForm] = useState({
@@ -95,7 +93,6 @@ export default function SettingsPage() {
   const [isActivatingScore, setIsActivatingScore] = useState(false)
   const [isDeletingScore, setIsDeletingScore] = useState(false)
 
-  // Reset Sessions Modal state
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
 
   useEffect(() => {
@@ -217,17 +214,15 @@ export default function SettingsPage() {
     }
   }
 
-  // AI Model handlers
   const loadAIModels = async () => {
     try {
       const data = await getAllAIModels()
       setAiModels(data)
     } catch (error: unknown) {
-      // Don't show error toast on initial load if endpoint doesn't exist yet
-      const statusCode = typeof error === 'object' && error !== null && 'statusCode' in error ? (error as { statusCode?: number }).statusCode : undefined
-      if (statusCode !== 404) {
-        toast.error('Failed to load AI models')
+      if (error instanceof Error && error.message.includes('NOT_FOUND')) {
+        return
       }
+      toast.error('Failed to load AI models')
     }
   }
 
@@ -298,20 +293,15 @@ export default function SettingsPage() {
       })
       await loadAIModels()
     } catch (error: unknown) {
-
-      // Show more detailed error message
-      let errorMessage = 'Failed to save AI model'
       if (error instanceof Error) {
-        errorMessage = error.message
+        toast.error(error.message)
       } else if (typeof error === 'object' && error !== null && 'response' in error) {
         const axiosError = error as { response?: { data?: { error?: { message?: string } } } }
         const responseMessage = axiosError.response?.data?.error?.message;
         if (responseMessage) {
-          errorMessage = responseMessage;
+          toast.error(responseMessage);
         }
       }
-
-      toast.error(errorMessage)
     }
   }
 
@@ -359,7 +349,6 @@ export default function SettingsPage() {
     }
   }
 
-  // Score Configuration handlers
   const loadScoreConfigurations = async () => {
     setIsLoadingScores(true)
     setScoreError(null)
@@ -549,7 +538,7 @@ export default function SettingsPage() {
       } else {
         toast.error(result.error || 'Invalid formula')
       }
-    } catch (error: unknown) {
+    } catch {
       toast.error('Failed to validate formula')
       setValidationResult({ isValid: false, error: 'Failed to validate formula', placeholders: [] })
     } finally {
@@ -584,7 +573,7 @@ export default function SettingsPage() {
       })
 
       setPreviewResult(result)
-    } catch (error: unknown) {
+    } catch {
       toast.error('Failed to preview score calculation')
     } finally {
       setIsPreviewing(false)
@@ -652,6 +641,8 @@ export default function SettingsPage() {
                     value={formData.centerId}
                     onChange={(e) => setFormData({ ...formData, centerId: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Select center"
+                    title="Select center"
                   >
                     <option value="">Select a center...</option>
                     {centers.map((center) => (
@@ -866,6 +857,8 @@ export default function SettingsPage() {
                     value={aiModelFormData.provider}
                     onChange={(e) => setAiModelFormData({ ...aiModelFormData, provider: e.target.value as AIModelProvider })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Select AI model provider"
+                    title="Select AI model provider"
                   >
                     <option value="">Select provider...</option>
                     <option value="OPENAI">OpenAI (GPT-4, GPT-3.5)</option>
@@ -882,6 +875,8 @@ export default function SettingsPage() {
                     value={aiModelFormData.centerId}
                     onChange={(e) => setAiModelFormData({ ...aiModelFormData, centerId: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Select center for AI model"
+                    title="Select center for AI model"
                   >
                     <option value="">Select center...</option>
                     {centers.map(center => (
@@ -1075,6 +1070,8 @@ export default function SettingsPage() {
                     }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Select formula template"
+                  title="Select formula template"
                 >
                   <option value="">Select a template...</option>
                   {Object.entries(FORMULA_TEMPLATES).map(([key, template]) => (
@@ -1109,6 +1106,8 @@ export default function SettingsPage() {
                       value={scoreForm.scoringType}
                       onChange={(e) => setScoreForm({ ...scoreForm, scoringType: e.target.value as ScoringType })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      aria-label="Select scoring type"
+                      title="Select scoring type"
                     >
                       <option value="PERCENTAGE">Percentage</option>
                       <option value="POINTS">Points</option>

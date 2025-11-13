@@ -31,14 +31,12 @@ export function MetricsDashboardExample() {
   });
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // Auto-subscribe when connected
   useEffect(() => {
     if (isConnected) {
       console.log('[MetricsDashboard] Subscribing to metrics...');
       socket.emit('subscribe:metrics');
     }
 
-    // Cleanup: unsubscribe when component unmounts
     return () => {
       if (isConnected) {
         console.log('[MetricsDashboard] Unsubscribing from metrics...');
@@ -47,7 +45,6 @@ export function MetricsDashboardExample() {
     };
   }, [isConnected, socket]);
 
-  // Listen for metrics updates
   useSocketEvent('metrics:update', (data) => {
     console.log('[MetricsDashboard] Metrics updated:', data);
     setMetrics(data);

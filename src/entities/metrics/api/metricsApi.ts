@@ -161,8 +161,6 @@ export function createMetricsStream(): EventSource {
   const baseUrl = config.apiBaseUrl
   const streamUrl = `${baseUrl}/metrics/stream`
 
-  // Note: EventSource doesn't support custom headers, so we pass token as query param
-  // The backend will need to support this or we'll use a different approach
   const eventSource = new EventSource(streamUrl)
 
   return eventSource

@@ -13,6 +13,7 @@ import { Label } from '@/shared/ui/label'
 import { getAllAPIConfigurations, type APIConfiguration } from '@/entities/api-configuration'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import { importApi } from '@/shared/api/importApi'
 
 interface ImportSubjectsDialogProps {
   open: boolean
@@ -21,8 +22,8 @@ interface ImportSubjectsDialogProps {
 
 interface SubjectResponse {
   success?: boolean
-  data?: Array<{ id?: string; name: string }> | Array<string>
-  subjects?: Array<{ id?: string; name: string }> | Array<string>
+  data?: Array<{ subjectid?: string; subjectname?: string; id?: string; name?: string }> | Array<string>
+  subjects?: Array<{ subjectid?: string; subjectname?: string; id?: string; name?: string }> | Array<string>
   message?: string
 }
 
@@ -35,11 +36,10 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
   const [selectedClass, setSelectedClass] = useState('')
   const [classes, setClasses] = useState<{ classid: string; classname: string }[]>([])
   const [isLoadingClasses, setIsLoadingClasses] = useState(false)
-  const [subjects, setSubjects] = useState<Array<{ name: string }>>([])
+  const [subjects, setSubjects] = useState<Array<{ subjectid?: string; subjectname: string }>>([])
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Load API configurations on dialog open
   const loadAPIConfigurations = useCallback(async () => {
     try {
       const data = await getAllAPIConfigurations()
@@ -56,7 +56,6 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
     }
   }, [open, loadAPIConfigurations])
 
-  // Load selected API config
   const loadAPIConfig = (configId: string) => {
     const config = apiConfigurations.find((c) => c.id === configId)
     if (config) {
@@ -66,47 +65,21 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
       setSubjects([])
       setError(null)
 
-      // Load classes if school portal
-      if (config.isSchoolPortal) {
-        loadClasses(config)
-      }
+      loadClasses()
     }
   }
 
-  // Fetch classes from external API
-  const loadClasses = useCallback(async (config: APIConfiguration) => {
+  const loadClasses = useCallback(async () => {
     setIsLoadingClasses(true)
     setError(null)
 
     try {
-      // Build classes endpoint - adjust based on your API structure
-      const classesEndpoint = `${config.apiEndpoint}/classes`
-
-      const response = await fetch(classesEndpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` }),
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch classes: ${response.statusText}`)
+      const response = await importApi.importClass()
+      if (response?.success && Array.isArray(response.data)) {
+        setClasses(response.data)
+      } else {
+        setClasses([])
       }
-
-      const data = await response.json()
-
-      // Parse response - adjust based on your API structure
-      let classList: { classid: string; classname: string }[] = []
-      if (Array.isArray(data)) {
-        classList = data
-      } else if (data.success && data.data) {
-        classList = data.data
-      } else if (data.classes) {
-        classList = data.classes
-      }
-
-      setClasses(classList)
     } catch (err) {
       console.error('Failed to load classes', err)
       setError(err instanceof Error ? err.message : 'Failed to load classes')
@@ -115,16 +88,14 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
     }
   }, [])
 
-  // Fetch subjects from external API when class is selected
-  const fetchSubjects = useCallback(async () => {
-    if (!selectedConfig || !selectedClass) return
+  const fetchSubjectsForClass = useCallback(async (classId: string) => {
+    if (!selectedConfig || !classId) return
 
     setIsLoadingSubjects(true)
     setError(null)
 
     try {
-      // Build subjects endpoint - passing classid as path parameter
-      const endpoint = `${selectedConfig.apiEndpoint}/${selectedClass}/subjects`
+      const endpoint = `${selectedConfig.apiEndpoint}/${classId}`
 
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -134,32 +105,61 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
         },
       })
 
+     
+
       if (!response.ok) {
         throw new Error(`Failed to fetch subjects: ${response.statusText}`)
       }
 
       const data = await response.json() as SubjectResponse
 
-      // Parse response - support multiple formats
-      let subjectList: Array<{ name: string }> = []
+      console.log('[fetchSubjectsForClass] Data:', data)
+      let subjectList: Array<{ subjectid?: string; subjectname: string }> = []
+
+      const parseSubject = (item: unknown): { subjectid?: string; subjectname: string } => {
+        if (typeof item === 'string') {
+          return { subjectname: item }
+        }
+        
+        if (typeof item !== 'object' || item === null) {
+          return { subjectname: String(item) }
+        }
+        
+        const obj = item as Record<string, unknown>
+        if (obj.subjectid !== undefined || obj.subjectname !== undefined) {
+          return {
+            subjectid: typeof obj.subjectid === 'string' ? obj.subjectid : undefined,
+            subjectname: typeof obj.subjectname === 'string' ? obj.subjectname : ''
+          }
+        }
+        
+        if (obj.id !== undefined || obj.name !== undefined) {
+          return {
+            subjectid: typeof obj.id === 'string' ? obj.id : undefined,
+            subjectname: typeof obj.name === 'string' ? obj.name : ''
+          }
+        }
+        
+        return { subjectname: (obj.name || obj.subjectname || String(item)) as string }
+      }
 
       if (Array.isArray(data)) {
-        subjectList = data.map(item =>
-          typeof item === 'string' ? { name: item } : { name: item.name }
-        )
+        subjectList = data.map(parseSubject)
       } else if (data.success && data.data) {
         subjectList = Array.isArray(data.data)
-          ? data.data.map(item => typeof item === 'string' ? { name: item } : { name: item.name })
+          ? data.data.map(parseSubject)
           : []
       } else if (data.subjects) {
         subjectList = Array.isArray(data.subjects)
-          ? data.subjects.map(item => typeof item === 'string' ? { name: item } : { name: item.name })
+          ? data.subjects.map(parseSubject)
           : []
       }
 
       if (subjectList.length === 0) {
         throw new Error('No subjects found for this class')
       }
+
+     
 
       setSubjects(subjectList)
     } catch (err) {
@@ -169,14 +169,13 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
     } finally {
       setIsLoadingSubjects(false)
     }
-  }, [selectedConfig, selectedClass])
+  }, [selectedConfig])
 
-  // Fetch subjects when class is selected
   useEffect(() => {
     if (selectedClass && selectedConfig) {
-      fetchSubjects()
+      fetchSubjectsForClass(selectedClass)
     }
-  }, [selectedClass, selectedConfig, fetchSubjects])
+  }, [selectedClass, selectedConfig, fetchSubjectsForClass])
 
   const handleImport = () => {
     if (subjects.length === 0) {
@@ -184,10 +183,8 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
       return
     }
 
-    // Store in sessionStorage for confirmation page
     sessionStorage.setItem('pending_subject_import', JSON.stringify(subjects))
 
-    // Close dialog and redirect
     onOpenChange(false)
     router.push('/dashboard/subjects/confirm-import')
   }
@@ -200,6 +197,7 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
     setSubjects([])
     setError(null)
   }
+  
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -209,7 +207,6 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* API Configuration Selector */}
           <div>
             <Label htmlFor="apiConfig">
               API Configuration <span className="text-red-500">*</span>
@@ -221,6 +218,7 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
                 setSelectedConfigId(e.target.value)
                 loadAPIConfig(e.target.value)
               }}
+              aria-label="Select API configuration"
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Select a saved configuration...</option>
@@ -239,8 +237,7 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
             </p>
           </div>
 
-          {/* Class Selector (appears if School Portal API) */}
-          {selectedConfig?.isSchoolPortal && (
+          {selectedConfig && (
             <div>
               <Label htmlFor="class">
                 Class <span className="text-red-500">*</span>
@@ -248,7 +245,16 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
               <select
                 id="class"
                 value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
+                onChange={(e) => {
+                  const classId = e.target.value
+                  setSelectedClass(classId)
+                  if (classId) {
+                    fetchSubjectsForClass(classId)
+                  } else {
+                    setSubjects([])
+                  }
+                }}
+                aria-label="Select class"
                 disabled={isLoadingClasses || classes.length === 0}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
               >
@@ -272,7 +278,6 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
             </div>
           )}
 
-          {/* Subject Count Display */}
           {subjects.length > 0 && (
             <div className="p-4 border rounded-lg bg-muted">
               <p className="text-sm font-medium">
@@ -282,7 +287,6 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
             </div>
           )}
 
-          {/* Error Display */}
           {error && (
             <div className="p-4 border border-destructive rounded-lg bg-destructive/10">
               <p className="text-sm text-destructive">{error}</p>
@@ -290,8 +294,7 @@ export function ImportSubjectsDialog({ open, onOpenChange }: ImportSubjectsDialo
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={handleReset}>
             Reset
           </Button>

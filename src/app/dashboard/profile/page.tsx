@@ -28,7 +28,6 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  // Form state
   const [firstName, setFirstName] = useState(user?.firstName || '')
   const [lastName, setLastName] = useState(user?.lastName || '')
 
@@ -57,7 +56,6 @@ export default function ProfilePage() {
         throw new Error(response.error?.message || 'Failed to update profile')
       }
 
-      // Update user in AuthContext with new data
       updateUser(response.data as Partial<User>)
 
       toast.success('Profile updated successfully!', {
@@ -89,7 +87,6 @@ export default function ProfilePage() {
         description: 'Your account has been permanently deleted.',
       })
 
-      // Logout and redirect to login
       setTimeout(() => {
         logout()
         router.push('/login')

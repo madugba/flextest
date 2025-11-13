@@ -34,7 +34,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // Check if user is authenticated on mount
   useEffect(() => {
     const initAuth = async () => {
       const token = getAuthToken()
@@ -48,7 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = await getCurrentUser()
         setUser(userData)
       } catch {
-        // Token is invalid, clear it
         removeAuthToken()
         setUser(null)
       } finally {
@@ -66,13 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const response = await apiLogin(credentials)
 
-      // Store token
       setAuthToken(response.data.token.accessToken)
 
-      // Set user
       setUser(response.data.user)
 
-      // Redirect to dashboard or home
       router.push('/dashboard')
     } catch (err) {
       const errorMessage = err instanceof ApiError
@@ -92,19 +87,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
 
-      // Call logout API (best effort)
       try {
         await apiLogout()
       } catch {
-        // Ignore logout API errors
       }
 
-      // Clear local state
       removeAuthToken()
       setUser(null)
       setError(null)
 
-      // Redirect to login
       router.push('/login')
     } finally {
       setLoading(false)
@@ -116,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await getCurrentUser()
       setUser(userData)
     } catch {
-      // If refresh fails, logout user
       removeAuthToken()
       setUser(null)
       router.push('/login')

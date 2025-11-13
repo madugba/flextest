@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAllCandidates, type Candidate, type CandidateFilters } from '@/entities/candidate'
+import { getAllCandidates, type Candidate, type CandidateFilters, type CandidateStatus } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'
 
 interface UseCandidateTableProps {
@@ -31,11 +31,9 @@ export function useCandidateTable(props?: UseCandidateTableProps) {
       setLoading(true)
       setError(null)
 
-      // Ensure filters are valid before making the request
       const validFilters: CandidateFilters = {
         ...filters,
-        // Only include status if it's a valid value
-        status: filters.status && ['PENDING', 'APPROVED', 'REJECTED', 'SUBMITTED', 'ACTIVE', 'ACTIVATE'].includes(filters.status)
+        status: filters.status && ['PENDING', 'APPROVED', 'REJECTED', 'SUBMITTED', 'ACTIVE'].includes(filters.status)
           ? filters.status
           : undefined,
       }
@@ -66,7 +64,11 @@ export function useCandidateTable(props?: UseCandidateTableProps) {
   }
 
   const handleFilterStatus = (status: string | undefined) => {
-    setFilters((prev) => ({ ...prev, status: status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUBMITTED' | 'ACTIVE' | 'ACTIVATE' | undefined, page: 1 }))
+    const normalizedStatus = status === 'ACTIVATE' ? 'ACTIVE' : status
+    const validStatus: CandidateStatus | undefined = normalizedStatus && ['PENDING', 'APPROVED', 'REJECTED', 'SUBMITTED', 'ACTIVE'].includes(normalizedStatus)
+      ? (normalizedStatus as CandidateStatus)
+      : undefined
+    setFilters((prev) => ({ ...prev, status: validStatus, page: 1 }))
   }
 
   const handlePageChange = (page: number) => {

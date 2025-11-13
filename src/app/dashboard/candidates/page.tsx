@@ -19,8 +19,8 @@ export default function CandidatesPage() {
 
   const handleImportSuccess = async (count: number) => {
     toast.success(`Successfully imported ${count} candidates!`)
-    // Add a small delay to ensure database is ready before refreshing
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    const refreshDelayMs = 500
+    await new Promise((resolve) => setTimeout(resolve, refreshDelayMs))
     setRefreshTrigger((prev) => prev + 1)
   }
 
@@ -54,7 +54,6 @@ export default function CandidatesPage() {
           </div>
         </div>
 
-        {/* Print Header - Only visible when printing */}
         <div className="hidden print:block text-2xl font-bold mb-4">
           Candidate Management
         </div>

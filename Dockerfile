@@ -1,9 +1,5 @@
-# Multi-stage Dockerfile for Next.js Frontend
-# Optimized for production deployment
+# Multi-stage
 
-# ============================================
-# Stage 1: Dependencies
-# ============================================
 FROM node:22-alpine AS deps
 
 # Install dependencies for native modules
@@ -11,20 +7,14 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json* ./
-
-# Install ALL dependencies (including dev) for build stage
 RUN npm ci --legacy-peer-deps
 
-# ============================================
-# Stage 2: Builder
-# ============================================
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependencies from deps stage
+
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source code
@@ -41,9 +31,6 @@ ENV NODE_ENV=production
 RUN npm run build
 
 
-# ============================================
-# Stage 3: Production Dependencies
-# ============================================
 FROM node:22-alpine AS prod-deps
 
 WORKDIR /app
@@ -55,9 +42,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev --legacy-peer-deps
 
 
-# ============================================
-# Stage 4: Production Runner
-# ============================================
+
 FROM node:22-alpine AS runner
 
 WORKDIR /app

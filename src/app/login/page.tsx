@@ -22,7 +22,6 @@ export default function LoginPage() {
     try {
       await login({ email, password })
     } catch {
-      // Error is handled by AuthContext
     }
   }
 

@@ -12,12 +12,10 @@
 function getServerIPs(): Set<string> {
   const ips = new Set<string>()
 
-  // Default local/development IPs
   ips.add('127.0.0.1')
   ips.add('::1')
   ips.add('localhost')
 
-  // Add custom IPs from environment variable
   const customIPs = process.env.NEXT_PUBLIC_SERVER_IPS
   if (customIPs) {
     customIPs.split(',').forEach(ip => {

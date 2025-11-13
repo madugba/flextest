@@ -2,10 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { bulkLogoutCandidates } from '@/entities/candidate/api/candidateApi'
 import { toast } from 'sonner'
 
-/**
- * Mutation hook for logging out multiple candidates from their active sessions
- * Invalidates monitoring queries to refetch updated data
- */
 export function useBulkLogoutCandidates(sessionId?: string) {
   const queryClient = useQueryClient()
 
@@ -15,7 +11,6 @@ export function useBulkLogoutCandidates(sessionId?: string) {
     onSuccess: (data) => {
       const { results } = data
 
-      // Show success toast with summary
       if (results.successful.length > 0 && results.failed.length === 0) {
         toast.success('All candidates logged out successfully', {
           description: `${results.successful.length} candidates were logged out`,
@@ -30,7 +25,6 @@ export function useBulkLogoutCandidates(sessionId?: string) {
         })
       }
 
-      // Invalidate monitoring queries to refetch updated data
       if (sessionId) {
         queryClient.invalidateQueries({
           queryKey: ['monitoring', 'session', sessionId, 'statistics'],
@@ -41,7 +35,6 @@ export function useBulkLogoutCandidates(sessionId?: string) {
       }
     },
     onError: (error: Error) => {
-      // Show error toast
       toast.error('Failed to perform bulk logout', {
         description: error.message || 'An unexpected error occurred',
       })

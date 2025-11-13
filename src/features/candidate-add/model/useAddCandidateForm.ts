@@ -22,7 +22,6 @@ export function useAddCandidateForm(onSuccess?: () => void) {
     subjects: [],
   })
 
-  // Load sessions and subjects on mount
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -30,7 +29,6 @@ export function useAddCandidateForm(onSuccess?: () => void) {
           getAllExamSessions(),
           getAllSubjects(),
         ])
-        // Filter to show only SCHEDULED or ACTIVE sessions
         const activeSessionsData = sessionsData.filter(
           session => session.status === 'SCHEDULED' || session.status === 'ACTIVE'
         )
@@ -43,7 +41,6 @@ export function useAddCandidateForm(onSuccess?: () => void) {
     loadData()
   }, [])
 
-  // Update formData.subjects when selectedSubjects changes
   useEffect(() => {
     setFormData(prev => ({ ...prev, subjects: selectedSubjects }))
   }, [selectedSubjects])
@@ -64,7 +61,6 @@ export function useAddCandidateForm(onSuccess?: () => void) {
       setError(null)
       setIsLoading(true)
 
-      // Validation
       if (!formData.surname.trim()) {
         setError('Surname is required')
         return
@@ -90,7 +86,6 @@ export function useAddCandidateForm(onSuccess?: () => void) {
         return
       }
 
-      // Prepare data for submission
       const submitData: CreateCandidateRequest = {
         ...formData,
         subjects: selectedSubjects,

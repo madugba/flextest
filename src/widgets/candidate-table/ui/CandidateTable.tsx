@@ -157,8 +157,10 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
       header: 'Status',
       cell: ({ row }) => {
         const status = row.status
+        const statusStr = status as string | undefined
+        const normalizedStatus = statusStr === 'ACTIVATE' ? 'ACTIVE' : status
         const getStatusBadgeProps = () => {
-          switch (status) {
+          switch (normalizedStatus) {
             case 'APPROVED':
               return {
                 variant: 'default' as const,
@@ -183,11 +185,6 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
               return {
                 variant: 'default' as const,
                 className: 'bg-emerald-500 text-white hover:bg-emerald-600 border-transparent',
-              }
-            case 'ACTIVATE':
-              return {
-                variant: 'outline' as const,
-                className: 'bg-purple-500 text-white hover:bg-purple-600 border-transparent',
               }
             default:
               return {
@@ -334,7 +331,6 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
 
                 {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
                   .filter((page) => {
-                    // Show first page, last page, current page, and pages around current
                     const current = pagination.page
                     return (
                       page === 1 ||
@@ -343,7 +339,6 @@ export function CandidateTable({ onDeleteSuccess, refreshTrigger }: CandidateTab
                     )
                   })
                   .map((page, index, array) => {
-                    // Add ellipsis if there's a gap
                     const prevPage = array[index - 1]
                     const showEllipsisBefore = prevPage && page - prevPage > 1
 

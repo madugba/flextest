@@ -17,7 +17,6 @@ export async function getCenterExists(): Promise<boolean> {
       timeout: 2000,
     })
 
-    // Check if response is successful and data is not empty
     const exists = response.success && Array.isArray(response.data) && response.data.length > 0
 
     if (exists) {

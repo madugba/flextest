@@ -50,14 +50,12 @@ export async function getCenters(): Promise<Center[]> {
  */
 export async function checkCenterExistsWithRedirect(): Promise<boolean> {
   if (typeof window === 'undefined') {
-    // Server-side: just return false, let middleware handle it
     return false
   }
 
   try {
     const centers = await getCenters()
 
-    // If empty array, redirect to onboarding
     if (centers.length === 0) {
       window.location.href = '/onboarding'
       return false
@@ -65,7 +63,6 @@ export async function checkCenterExistsWithRedirect(): Promise<boolean> {
 
     return true
   } catch {
-    // Any error, redirect to error page
     window.location.href = '/error'
     return false
   }

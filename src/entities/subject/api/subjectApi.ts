@@ -59,8 +59,6 @@ export async function importSubjectsFromExcel(file: File): Promise<ImportSubject
   const formData = new FormData()
   formData.append('file', file)
 
-  // Note: This requires a different implementation for FormData
-  // For now, return a placeholder
   throw new Error('Excel import not yet implemented in frontend')
 }
 

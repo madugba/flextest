@@ -11,7 +11,7 @@ export default function AdminsPage() {
 
   const handleSuccess = (message: string) => {
     setSuccess(message)
-    setRefreshTrigger((prev) => prev + 1) // Trigger table refresh
+    setRefreshTrigger((prev) => prev + 1)
     setTimeout(() => setSuccess(null), 3000)
   }
 

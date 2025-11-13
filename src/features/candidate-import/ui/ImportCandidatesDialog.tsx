@@ -50,10 +50,8 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
   const [error, setError] = useState<string | null>(null)
   const [importTab, setImportTab] = useState('json')
 
-  // JSON import state
   const [jsonData, setJsonData] = useState('')
 
-  // API import state
   const [centers, setCenters] = useState<Center[]>([])
   const [examSessions, setExamSessions] = useState<ExamSession[]>([])
   const [apiConfigurations, setApiConfigurations] = useState<APIConfiguration[]>([])
@@ -68,19 +66,16 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
   const [isLoadingClasses, setIsLoadingClasses] = useState(false)
   const [isLoadingSubClasses, setIsLoadingSubClasses] = useState(false)
 
-  // Subject selection state
   const [availableSubjects, setAvailableSubjects] = useState<Array<Subject & { questionCount: number }>>([])
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false)
 
-  // Students caching and active list
   const [classStudentsCache, setClassStudentsCache] = useState<Record<string, SchoolPortalStudent[]>>({})
   const [subClassStudentsCache, setSubClassStudentsCache] = useState<Record<string, SchoolPortalStudent[]>>({})
   const [activeStudents, setActiveStudents] = useState<SchoolPortalStudent[]>([])
   const [isLoadingStudents, setIsLoadingStudents] = useState(false)
   const [studentsError, setStudentsError] = useState<string | null>(null)
 
-  // Excel import state
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [parsedExcelCandidates, setParsedExcelCandidates] = useState<Array<{
     candidateid?: string | null
@@ -105,9 +100,8 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
 
   const loadExamSessions = useCallback(async () => {
     try {
-      const data = await getAllExamSessions() // Get all sessions
-      // Filter to show only SCHEDULED or ACTIVE sessions
-      const activeSessions = data.filter(
+      const sessions = await getAllExamSessions()
+      const activeSessions = sessions.filter(
         session => session.status === 'SCHEDULED' || session.status === 'ACTIVE'
       )
       setExamSessions(activeSessions)
@@ -165,7 +159,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
     }
   }, [selectedClass])
 
-  // Build endpoint helpers for school portal
   const buildClassEndpoint = (base: string, classid: string) => {
     const baseEndpoint = base.endsWith('/') ? base.slice(0, -1) : base
     return `${baseEndpoint}/${classid}/`
@@ -175,10 +168,8 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
     return `${baseEndpoint}/${classid}/${subclassid}`
   }
 
-  // Robust fetch helper with timeout and clearer errors
   const fetchJsonWithTimeout = async (url: string, headers: HeadersInit, timeoutMs = 15000): Promise<unknown> => {
     try {
-      // Ensure absolute URL
       const absoluteUrl = /^https?:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
@@ -203,10 +194,8 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
     }
   }
 
-  // Fetch students for a class (class-only)
   const fetchClassStudents = useCallback(async () => {
     if (!selectedConfig || !selectedConfig.isSchoolPortal || !selectedClass) return
-    // Return cached if present
     if (classStudentsCache[selectedClass]) {
       setActiveStudents(classStudentsCache[selectedClass])
       return
@@ -220,7 +209,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
         ...(selectedConfig.apiKey && { 'Authorization': `Bearer ${selectedConfig.apiKey}` }),
       }) as SchoolPortalResponse | SchoolPortalStudent[]
       
-      // Handle both array and object responses
       let students: SchoolPortalStudent[] = []
       if (Array.isArray(response)) {
         students = response
@@ -242,7 +230,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
     }
   }, [selectedConfig, selectedClass, classStudentsCache])
 
-  // Fetch students for a sub-class (overrides class-only list)
   const fetchSubClassStudents = useCallback(async () => {
     if (!selectedConfig || !selectedConfig.isSchoolPortal || !selectedClass || !selectedSubClassId) return
     const key = `${selectedClass}:${selectedSubClassId}`
@@ -259,9 +246,8 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
         ...(selectedConfig.apiKey && { 'Authorization': `Bearer ${selectedConfig.apiKey}` }),
       }) as SchoolPortalResponse | SchoolPortalStudent[]
       
-      console.log('candidate information from school portal ', response)
+     
       
-      // Handle both array and object responses
       let students: SchoolPortalStudent[] = []
       if (Array.isArray(response)) {
         students = response
@@ -306,20 +292,17 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
   useEffect(() => {
     if (selectedClass) {
       loadSubClasses()
-      // Fetch class-level students when class changes
       fetchClassStudents()
     }
   }, [selectedClass, loadSubClasses, fetchClassStudents])
 
-  // When sub class changes, fetch sub-class students and override active list
   useEffect(() => {
     if (selectedSubClassId) {
       fetchSubClassStudents()
-    } else if (selectedClass) {
-      // If sub-class cleared, revert to class-only students if present
-      if (classStudentsCache[selectedClass]) {
-        setActiveStudents(classStudentsCache[selectedClass])
-      }
+      return
+    }
+    if (selectedClass && classStudentsCache[selectedClass]) {
+      setActiveStudents(classStudentsCache[selectedClass])
     }
   }, [selectedSubClassId, selectedClass, fetchSubClassStudents, classStudentsCache])
 
@@ -334,7 +317,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
       loadCenters()
       loadExamSessions()
       loadAPIConfigurations()
-      // loadClasses()
     }
   }, [isOpen, loadCenters, loadExamSessions, loadAPIConfigurations])
 
@@ -385,7 +367,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
     setExcelFile(null)
     setParsedExcelCandidates([])
     setImportTab('json')
-    // Reset to first items if available
     if (centers.length > 0) setSelectedCenterId(centers[0].id)
     if (examSessions.length > 0) setSelectedExamSessionId(examSessions[0].id)
   }
@@ -416,14 +397,12 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
         throw new Error('JSON must be an array of candidates')
       }
 
-      // Show loading toast for user feedback
       toast.loading(`Importing ${candidates.length} candidate(s)...`, {
         id: 'import-loading',
       });
 
       const result = await importCandidates({ candidates })
 
-      // Dismiss loading toast
       toast.dismiss('import-loading');
 
       handleClose()
@@ -444,7 +423,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
           ? err.message
           : 'Failed to import candidates';
 
-      // Dismiss loading toast before showing error
       toast.dismiss('import-loading');
 
       setError(errorMessage);
@@ -491,39 +469,30 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
       setError(null)
       setIsLoading(true)
 
-      // Use cached students based on selection
-      const candidatesSource = selectedSubClassId
+      const cachedStudents = selectedSubClassId
         ? subClassStudentsCache[`${selectedClass}:${selectedSubClassId}`]
         : classStudentsCache[selectedClass]
 
-      if (!candidatesSource || candidatesSource.length === 0) {
+      if (!cachedStudents || cachedStudents.length === 0) {
         throw new Error('No candidates loaded. Please select a class/sub-class to fetch students first.')
       }
 
-      // Show loading toast for user feedback
-      toast.loading(`Importing ${candidatesSource.length} candidate(s) from API...`, {
+      toast.loading(`Importing ${cachedStudents.length} candidate(s) from API...`, {
         id: 'import-loading',
       });
 
-      // Transform students to backend import DTO - matches backend candidate.service.ts importCandidates signature
-      const transformedCandidates = candidatesSource
+      const transformedCandidates = cachedStudents
         .map((student) => {
-          // Map studentid to id (required)
           const id = student.studentid?.trim()
-          // Required fields
           const surname = student.surname?.trim() || ''
           const firstname = student.firstname?.trim() || ''
-          
-          // Optional fields - only include if non-empty
           const othername = student.othername?.trim()
           const picture = student.picture?.trim()
 
-          // Validate required fields
           if (!id || !surname || !firstname) {
             return null
           }
 
-          // Build candidate object matching backend DTO exactly
           const candidate: {
             id: string
             surname: string
@@ -540,7 +509,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
             subjects: selectedSubjects,
           }
 
-          // Only add optional fields if they have values
           if (othername && othername !== '') {
             candidate.othername = othername
           }
@@ -562,7 +530,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
 
       const result = await importCandidates({ candidates: transformedCandidates })
 
-      // Dismiss loading toast
       toast.dismiss('import-loading');
 
       handleClose()
@@ -583,7 +550,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
           ? err.message
           : 'Failed to import from API';
 
-      // Dismiss loading toast before showing error
       toast.dismiss('import-loading');
 
       setError(errorMessage);
@@ -636,7 +602,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
       const worksheet = workbook.Sheets[workbook.SheetNames[0]]
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
-      // Column mapping (case-insensitive)
       const normalizeColumnName = (name: string): string => {
         const normalized = name.trim().toLowerCase().replace(/\s+/g, '')
         if (['candidateid', 'candidate id', 'studentid', 'student id'].includes(normalized)) {
@@ -654,7 +619,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
         return normalized
       }
 
-      // Find column indices
       const firstRow = jsonData[0] as Record<string, unknown>
       if (!firstRow) {
         throw new Error('Excel file is empty')
@@ -668,19 +632,16 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
         }
       })
 
-      // Validate required columns
       if (!columnMap.lastName || !columnMap.firstName) {
         throw new Error('Excel file must contain "lastName" and "firstName" columns')
       }
 
-      // Parse and validate data
       const candidates = (jsonData as Record<string, unknown>[]).map((row, index) => {
         const candidateid = columnMap.candidateid ? String(row[columnMap.candidateid] || '').trim() : null
         const lastName = String(row[columnMap.lastName] || '').trim()
         const firstName = String(row[columnMap.firstName] || '').trim()
         const otherName = columnMap.otherName ? String(row[columnMap.otherName] || '').trim() : null
 
-        // Validate required fields
         if (!lastName || !firstName) {
           throw new Error(`Row ${index + 2} is missing required fields (lastName or firstName)`)
         }
@@ -724,12 +685,10 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
       setError(null)
       setIsLoading(true)
 
-      // Show loading toast for user feedback
       toast.loading(`Importing ${parsedExcelCandidates.length} candidate(s) from Excel...`, {
         id: 'import-loading',
       });
 
-      // Transform Excel data to backend DTO format
       const transformedCandidates = parsedExcelCandidates
         .map((candidate) => {
           const surname = candidate.lastName?.trim() || ''
@@ -737,12 +696,10 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
           const othername = candidate.otherName?.trim()
           const candidateid = candidate.candidateid?.trim()
 
-          // Validate required fields
           if (!surname || !firstname) {
             return null
           }
 
-          // Build candidate object matching backend DTO
           const candidateDto: {
             id?: string
             surname: string
@@ -757,12 +714,10 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
             subjects: selectedSubjects,
           }
 
-          // Only add id if candidateid is provided
           if (candidateid && candidateid !== '') {
             candidateDto.id = candidateid
           }
 
-          // Only add othername if provided
           if (othername && othername !== '') {
             candidateDto.othername = othername
           }
@@ -784,7 +739,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
 
       const result = await importCandidates({ candidates: transformedCandidates })
 
-      // Dismiss loading toast
       toast.dismiss('import-loading');
 
       handleClose()
@@ -805,7 +759,6 @@ export function ImportCandidatesDialog({ onSuccess }: ImportCandidatesDialogProp
           ? err.message
           : 'Failed to import from Excel';
 
-      // Dismiss loading toast before showing error
       toast.dismiss('import-loading');
 
       setError(errorMessage);

@@ -14,7 +14,6 @@ export function getLocalIP(): string {
       if (!netInterface) continue
 
       for (const net of netInterface) {
-        // Skip over non-IPv4 and internal (i.e., 127.0.0.1) addresses
         const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4
         if (net.family === familyV4Value && !net.internal) {
           return net.address

@@ -30,6 +30,8 @@ export interface ImportSubjectsResponse {
 export interface ConfirmImportRequest {
   subjects: Array<{
     name: string
+    subjectid?: string
+    subjectname?: string
   }>
 }
 

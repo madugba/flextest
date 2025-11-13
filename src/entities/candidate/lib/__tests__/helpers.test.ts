@@ -212,7 +212,6 @@ describe('Candidate helper functions', () => {
         lastLoginAt: new Date('2024-01-01T12:00:00Z').toISOString(),
       }
       const result = formatCandidateLastLogin(candidate)
-      // Locale-dependent; just assert it is a non-relative formatted string
       expect(result).toBeTruthy()
       expect(typeof result).toBe('string')
       expect(result).not.toBe('Never')

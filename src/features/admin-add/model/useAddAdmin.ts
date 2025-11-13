@@ -32,7 +32,6 @@ export function useAddAdmin(onSuccess?: () => void) {
     try {
       setError(null)
 
-      // Validate
       const validationError = validateCreateAdmin(formData)
       if (validationError) {
         setError(validationError)

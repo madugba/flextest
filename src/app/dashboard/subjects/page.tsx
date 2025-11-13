@@ -72,7 +72,6 @@ export default function SubjectsPage() {
       })
       setShowCreateDialog(false)
       setSubjectName('')
-      // Clear search and refresh to show new subject
       setSearch('')
       await fetchSubjects('')
     } catch (error) {

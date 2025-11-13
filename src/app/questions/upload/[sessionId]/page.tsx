@@ -32,19 +32,15 @@ export default function SessionUploadQuestionsPage() {
 
       console.log('[loadSessionAndStats] Loading...', { sessionId, bypassCache })
 
-      // Add small delay if bypassing cache
       if (bypassCache) {
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      // Load session
       const sessionData = await getExamSessionById(sessionId)
       setSession(sessionData)
 
-      // Load subjects for this session (only subjects chosen by candidates)
       const sessionSubjects = await getSubjectsForSession(sessionId)
 
-      // Load question counts for each subject
       const statsPromises = sessionSubjects.map(async (subject) => {
         try {
           const { count } = await getQuestionCount(subject.id, sessionId, bypassCache)
@@ -86,12 +82,11 @@ export default function SessionUploadQuestionsPage() {
     }
   }, [sessionId, loadSessionAndStats])
 
-  // Auto-refresh when page becomes visible (e.g., when navigating back)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && sessionId) {
         console.log('[Session Upload] Page visible, refreshing stats...')
-        loadSessionAndStats(true) // Bypass cache on visibility change
+        loadSessionAndStats(true)
       }
     }
 
@@ -136,7 +131,6 @@ export default function SessionUploadQuestionsPage() {
 
   const totalUploaded = questionStats.reduce((sum, stat) => sum + stat.uploaded, 0)
 
-  // Calculate total required: compulsory + (other questions × number of other subjects)
   const compulsoryCount = questionStats.filter(stat => stat.isCompulsory).length
   const otherSubjectsCount = questionStats.length - compulsoryCount
   const totalRequired = session

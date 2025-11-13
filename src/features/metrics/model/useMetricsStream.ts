@@ -4,12 +4,6 @@ import { getAuthToken } from '@/shared/api/authApi'
 import type { DashboardMetrics, SystemMetrics, BusinessMetrics, ConnectionMetrics, PerformanceMetrics } from '@/entities/metrics/api/metricsApi'
 import { config } from '@/shared/config'
 
-/**
- * Hook for Server-Sent Events (SSE) metrics streaming
- * Updates React Query cache when events arrive from backend
- * Uses event batching to prevent excessive re-renders
- * Only components using changed data will re-render
- */
 interface StreamConnection {
   close: () => void
 }
@@ -19,7 +13,6 @@ export function useMetricsStream() {
   const eventSourceRef = useRef<StreamConnection | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
-  // Event batching - merge updates every 200ms to reduce re-renders
   const pendingUpdatesRef = useRef<{
     system?: SystemMetrics
     business?: BusinessMetrics
@@ -29,13 +22,11 @@ export function useMetricsStream() {
   const batchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
-    // Batch update function - merges pending updates every 200ms
     const flushBatch = () => {
       const updates = pendingUpdatesRef.current
 
       if (Object.keys(updates).length === 0) return
 
-      // Merge all pending updates into dashboard cache at once
       queryClient.setQueryData<DashboardMetrics>(
         ['metrics', 'dashboard'],
         (old) => {
@@ -50,7 +41,6 @@ export function useMetricsStream() {
         }
       )
 
-      // Update individual caches if they exist
       if (updates.system) {
         queryClient.setQueryData(['metrics', 'system'], updates.system)
       }
@@ -58,22 +48,20 @@ export function useMetricsStream() {
         queryClient.setQueryData(['metrics', 'business'], updates.business)
       }
 
-      // Clear pending updates
       pendingUpdatesRef.current = {}
     }
 
-    // Schedule batched update
     const scheduleBatch = () => {
-      if (batchTimeoutRef.current) return // Already scheduled
+      if (batchTimeoutRef.current) return
 
+      const batchDelayMs = 200
       batchTimeoutRef.current = setTimeout(() => {
         flushBatch()
         batchTimeoutRef.current = undefined
-      }, 200) // Batch window: 200ms
+      }, batchDelayMs)
     }
 
     const connectSSE = async () => {
-      // Clean up existing connection
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
       }
@@ -87,7 +75,6 @@ export function useMetricsStream() {
       const url = `${config.apiBaseUrl}/metrics/stream`
 
       try {
-        // Use fetch instead of EventSource to send Authorization header
         const response = await fetch(url, {
           method: 'GET',
           headers: {
@@ -104,7 +91,6 @@ export function useMetricsStream() {
           throw new Error('Response body is null')
         }
 
-        // Create custom EventSource-like object
         const reader = response.body.getReader()
         const decoder = new TextDecoder()
         let buffer = ''
@@ -116,7 +102,6 @@ export function useMetricsStream() {
         }
         eventSourceRef.current = eventSource
 
-        // Process SSE stream
         const processStream = async () => {
           try {
             while (true) {
@@ -150,7 +135,6 @@ export function useMetricsStream() {
           }
         }
 
-        // Event handler
         const handleSSEEvent = (eventType: string, data: string) => {
           try {
             switch (eventType) {
@@ -214,7 +198,6 @@ export function useMetricsStream() {
       } catch (error) {
         console.error('❌ SSE connection error:', error)
 
-        // Reconnect after 5 seconds
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current)
         }
@@ -227,7 +210,6 @@ export function useMetricsStream() {
 
     connectSSE()
 
-    // Cleanup on unmount
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
@@ -238,7 +220,7 @@ export function useMetricsStream() {
       }
       if (batchTimeoutRef.current) {
         clearTimeout(batchTimeoutRef.current)
-        flushBatch() // Flush any pending updates on unmount
+        flushBatch()
       }
     }
   }, [queryClient])

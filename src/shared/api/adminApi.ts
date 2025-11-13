@@ -1,4 +1,4 @@
-import { ApiClient, ApiError, ApiResponse } from './client'
+import { ApiClient, ApiError } from './client'
 import { config } from '@/shared/config'
 
 export interface ResetPreviewCounts {
@@ -19,7 +19,6 @@ class AdminApi {
   private client: ApiClient
 
   constructor(baseUrl: string) {
-    // Point directly to /admins within the API base
     this.client = new ApiClient(`${baseUrl}/admins`)
   }
 

@@ -76,12 +76,11 @@ export default function SubjectUploadPage() {
 
   const [subject, setSubject] = useState<Subject | null>(null)
   const [session, setSession] = useState<ExamSession | null>(null)
-  const [questions, setQuestions] = useState<Question[]>([]) // Always initialize as empty array
+  const [questions, setQuestions] = useState<Question[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Form state
   const [formData, setFormData] = useState({
     question: '',
     optionA: '',
@@ -91,20 +90,17 @@ export default function SubjectUploadPage() {
     answer: '' as AnswerOption | '',
   })
 
-  // Edit state
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('single')
 
-  // Import state
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
   const [parsedQuestions, setParsedQuestions] = useState<Omit<Question, 'id' | 'subjectId' | 'sessionId' | 'createdAt' | 'updatedAt'>[]>([])
   const [isImporting, setIsImporting] = useState(false)
 
-  // AI Generation state
   const [aiGenerateDialogOpen, setAiGenerateDialogOpen] = useState(false)
   const [aiModels, setAiModels] = useState<AIModelConfiguration[]>([])
   const [aiGenerateFormData, setAiGenerateFormData] = useState({
@@ -115,15 +111,12 @@ export default function SubjectUploadPage() {
   })
   const [isGenerating, setIsGenerating] = useState(false)
 
-  // Preview state
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
   const [generatedQuestions, setGeneratedQuestions] = useState<GeneratedQuestion[]>([])
   const [isSubmittingGenerated, setIsSubmittingGenerated] = useState(false)
 
-  // Calculate target questions to generate
   const currentQuestionCount = questions.length
 
-  // Debug: Log whenever questions state changes
   useEffect(() => {
     console.log('[questions state] Updated:', {
       count: questions.length,
@@ -131,7 +124,6 @@ export default function SubjectUploadPage() {
     })
   }, [questions])
 
-  // Load AI models
   useEffect(() => {
     const loadAIModels = async () => {
       try {
@@ -152,10 +144,10 @@ export default function SubjectUploadPage() {
 
       console.log('[loadData] Starting to load data...', { subjectId, sessionId, bypassCache })
 
-      // Add longer delay if bypassing cache to allow backend Redis cache invalidation to complete
       if (bypassCache) {
         console.log('[loadData] Waiting for cache invalidation...')
-        await new Promise(resolve => setTimeout(resolve, 1500)) // Increased to 1.5 seconds
+        const cacheInvalidationDelayMs = 1_500
+        await new Promise(resolve => setTimeout(resolve, cacheInvalidationDelayMs))
       }
 
       const [subjectData, sessionData, questionsData] = await Promise.all([
@@ -175,12 +167,10 @@ export default function SubjectUploadPage() {
       setSubject(subjectData)
       setSession(sessionData)
 
-      // Ensure questionsData is an array
       if (Array.isArray(questionsData)) {
         console.log('[loadData] Setting questions:', questionsData.length, 'items')
         setQuestions(questionsData)
 
-        // If we're bypassing cache but still got empty results, try one more time after a longer delay
         if (bypassCache && questionsData.length === 0) {
           console.warn('[loadData] Got empty array after cache bypass, retrying in 2 seconds...')
           setTimeout(async () => {
@@ -211,7 +201,6 @@ export default function SubjectUploadPage() {
     }
   }, [subjectId, sessionId])
 
-  // Load data when component mounts or dependencies change
   useEffect(() => {
     if (subjectId && sessionId) {
       loadData()
@@ -235,7 +224,6 @@ export default function SubjectUploadPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate required fields
     if (!formData.question.trim()) {
       toast.error('Please enter the question')
       return
@@ -257,7 +245,6 @@ export default function SubjectUploadPage() {
       setError(null)
 
       if (editingQuestion) {
-        // Update existing question
         console.log('[handleSubmit] Updating question:', editingQuestion.id)
         await updateQuestion(editingQuestion.id, {
           question: formData.question,
@@ -272,7 +259,6 @@ export default function SubjectUploadPage() {
         console.log('[handleSubmit] Question updated successfully')
         toast.success('Question updated successfully!')
       } else {
-        // Create new question
         console.log('[handleSubmit] Creating new question')
         const createdQuestion = await createQuestion({
           question: formData.question,
@@ -288,14 +274,11 @@ export default function SubjectUploadPage() {
         toast.success('Question created successfully!')
       }
 
-      // Reset form and reload data (bypass cache to get fresh data)
-      console.log('[handleSubmit] Resetting form and reloading data...')
       resetForm()
-      await loadData(true) // Bypass cache to ensure fresh data
-      console.log('[handleSubmit] Form reset and data reloaded')
-
-      // Switch to list tab to show the newly created/updated question
+      await loadData(true)
       setActiveTab('list')
+
+      console.log('[handleSubmit] Success!')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : undefined;
       const responseMessage = (typeof err === 'object' && err !== null && 'response' in err)
@@ -322,24 +305,18 @@ export default function SubjectUploadPage() {
       answer: question.answer,
     })
 
-    // Switch to "Add Question" tab
-    setActiveTab('single')
-    console.log('[handleEdit] Switched to Add Question tab')
-
-    // Scroll to form after tab switch
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      console.log('[handleEdit] Scrolled to form')
-
-      // Focus on the first editor (question field)
-      setTimeout(() => {
-        const editorElement = document.querySelector('.ProseMirror') as HTMLElement
-        if (editorElement) {
-          editorElement.focus()
-          console.log('[handleEdit] Focused on question editor')
-        }
-      }, 200)
+      const formElement = document.getElementById('question-form')
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
     }, 100)
+    setTimeout(() => {
+      const editorElement = document.querySelector('[data-editor="question"]') as HTMLElement | null
+      if (editorElement) {
+        editorElement.focus()
+      }
+    }, 200)
 
     console.log('[handleEdit] Form populated with question data')
   }
@@ -363,13 +340,9 @@ export default function SubjectUploadPage() {
 
       toast.success('Question deleted successfully!')
 
-      // Reload data to update progress (bypass cache with delay)
-      console.log('[handleDelete] Reloading data in 1.5 seconds...')
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      await loadData(true)
-      console.log('[handleDelete] Data reloaded, new count:', questions.length)
-      console.log('[handleDelete] New questions IDs:', questions.map(q => q.id))
+      setTimeout(() => {
+        loadData(true)
+      }, 1500)
 
       setDeleteDialogOpen(false)
       setQuestionToDelete(null)
@@ -393,9 +366,7 @@ export default function SubjectUploadPage() {
     }
   }
 
-  // Import handlers
   const downloadSampleExcel = () => {
-    // Create sample data
     const sampleData = [
       {
         question: 'What is 2 + 2?',
@@ -423,15 +394,10 @@ export default function SubjectUploadPage() {
       }
     ]
 
-    // Create worksheet
-    const ws = XLSX.utils.json_to_sheet(sampleData)
-
-    // Create workbook
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Questions')
-
-    // Download file
-    XLSX.writeFile(wb, 'questions_sample.xlsx')
+    const worksheet = XLSX.utils.json_to_sheet(sampleData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Questions')
+    XLSX.writeFile(workbook, 'questions_sample.xlsx')
     toast.success('Sample file downloaded!')
   }
 
@@ -449,17 +415,13 @@ export default function SubjectUploadPage() {
 
       console.log('[handleFileSelect] Parsed data:', jsonData)
 
-      // Validate and transform data
-      const questions = (jsonData as Record<string, unknown>[]).map((row, index) => {
-        // Validate required fields
+      const transformedQuestions = (jsonData as Record<string, unknown>[]).map((row, index) => {
         if (!row.question || !row.optionA || !row.optionB || !row.optionC || !row.optionD || !row.answer) {
           throw new Error(`Row ${index + 2} is missing required fields`)
         }
 
-        // Validate answer is A, B, C, or D
-        const answer = row.answer.toString().toUpperCase()
-        if (!['A', 'B', 'C', 'D'].includes(answer)) {
-          throw new Error(`Row ${index + 2} has invalid answer: ${row.answer}. Must be A, B, C, or D`)
+        if (!['A', 'B', 'C', 'D'].includes(String(row.answer).toUpperCase())) {
+          throw new Error(`Row ${index + 2} has invalid answer (must be A, B, C, or D)`)
         }
 
         return {
@@ -468,12 +430,12 @@ export default function SubjectUploadPage() {
           optionB: row.optionB.toString(),
           optionC: row.optionC.toString(),
           optionD: row.optionD.toString(),
-          answer: answer as AnswerOption
+          answer: String(row.answer).toUpperCase() as AnswerOption
         }
       })
 
-      setParsedQuestions(questions)
-      toast.success(`Parsed ${questions.length} questions successfully!`)
+      setParsedQuestions(transformedQuestions)
+      toast.success(`Parsed ${transformedQuestions.length} questions successfully!`)
     } catch (err: unknown) {
       console.error('[handleFileSelect] Error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to parse Excel file';
@@ -492,29 +454,26 @@ export default function SubjectUploadPage() {
     try {
       setIsImporting(true)
 
-      // Add subjectId and sessionId to each question
-      const questionsToImport = parsedQuestions.map(q => ({
-        ...q,
+      const enrichedQuestions = parsedQuestions.map((question) => ({
+        ...question,
         subjectId,
-        sessionId
+        sessionId,
       }))
 
-      console.log('[handleImport] Importing questions:', questionsToImport)
+      console.log('[handleImport] Importing questions:', enrichedQuestions)
 
       const result = await bulkImportQuestions({
-        questions: questionsToImport
+        questions: enrichedQuestions
       })
 
       console.log('[handleImport] Import result:', result)
 
       toast.success(`Successfully imported ${result.success} out of ${result.total} questions!`)
 
-      // Reset and close dialog
       setImportDialogOpen(false)
       setImportFile(null)
       setParsedQuestions([])
 
-      // Reload data
       await loadData(true)
     } catch (err: unknown) {
       console.error('[handleImport] Error:', err)
@@ -525,8 +484,7 @@ export default function SubjectUploadPage() {
     }
   }
 
-  // AI Generation handlers
-  const handleGenerate = async () => {
+  const handleGenerateQuestions = async () => {
     if (!aiGenerateFormData.modelId || !subject) {
       toast.error('Please select an AI model')
       return
@@ -551,7 +509,6 @@ export default function SubjectUploadPage() {
       })
 
       setGeneratedQuestions(questions)
-      setAiGenerateDialogOpen(false)
       setPreviewDialogOpen(true)
       toast.success(`Generated ${questions.length} questions!`)
     } catch (err: unknown) {
@@ -571,35 +528,26 @@ export default function SubjectUploadPage() {
     try {
       setIsSubmittingGenerated(true)
 
-      // Convert generated questions to the format expected by bulkImportQuestions
-      const questionsToImport = generatedQuestions.map(q => ({
-        question: q.question,
-        optionA: q.optionA,
-        optionB: q.optionB,
-        optionC: q.optionC,
-        optionD: q.optionD,
-        answer: q.answer,
+      const formattedQuestions = generatedQuestions.map((question) => ({
+        question: question.question,
+        optionA: question.optionA,
+        optionB: question.optionB,
+        optionC: question.optionC,
+        optionD: question.optionD,
+        answer: question.answer,
         subjectId,
         sessionId
       }))
 
       const result = await bulkImportQuestions({
-        questions: questionsToImport
+        questions: formattedQuestions
       })
 
       toast.success(`Successfully added ${result.success} out of ${result.total} questions!`)
 
-      // Reset and close dialog
-      setPreviewDialogOpen(false)
       setGeneratedQuestions([])
-      setAiGenerateFormData({
-        modelId: '',
-        numQuestions: 5,
-        difficultyLevel: 'medium',
-        extraPrompt: ''
-      })
-
-      // Reload data
+      setPreviewDialogOpen(false)
+      setAiGenerateDialogOpen(false)
       await loadData(true)
     } catch (err: unknown) {
       console.error('[handleSubmitGenerated] Error:', err)
@@ -617,37 +565,15 @@ export default function SubjectUploadPage() {
   const uploadedCount = questions.length
   const remainingCount = Math.max(0, requiredQuestions - uploadedCount)
 
-  // Filter questions based on search query
-  const filteredQuestions = questions.filter((question) => {
-    if (!searchQuery.trim()) return true
-
-    const query = searchQuery.toLowerCase()
-    const questionText = question.question.toLowerCase()
-    const optionA = question.optionA.toLowerCase()
-    const optionB = question.optionB.toLowerCase()
-    const optionC = question.optionC.toLowerCase()
-    const optionD = question.optionD.toLowerCase()
-
-    return (
-      questionText.includes(query) ||
-      optionA.includes(query) ||
-      optionB.includes(query) ||
-      optionC.includes(query) ||
-      optionD.includes(query)
-    )
-  })
-  const progressPercentage =
-    requiredQuestions > 0 ? (uploadedCount / requiredQuestions) * 100 : 0
-
-  // Debug progress calculation
-  console.log('[Progress Calculation]', {
-    isCompulsory: session && subject && session.compulsorySubjectId === subject.id,
-    requiredQuestions,
-    uploadedCount,
-    remainingCount,
-    progressPercentage,
-    questionsArrayLength: questions.length
-  })
+  const filteredQuestions = questions.filter(question =>
+    question.question.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+  const progressPercentage = session
+    ? Math.min(
+        Math.round((questions.length / session.totalQuestion) * 100),
+        100
+      )
+    : 0
 
   if (isLoading) {
     return (
@@ -1411,7 +1337,7 @@ export default function SubjectUploadPage() {
                 Cancel
               </Button>
               <Button
-                onClick={handleGenerate}
+                onClick={handleGenerateQuestions}
                 disabled={!aiGenerateFormData.modelId || isGenerating}
                 className="bg-blue-600 hover:bg-blue-700"
               >

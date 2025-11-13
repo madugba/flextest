@@ -46,14 +46,12 @@ export class ApiClient {
       },
     })
 
-    // Request interceptor to add auth token
     this.instance.interceptors.request.use(
       (config) => {
-        // Skip Authorization header for logout endpoint
         const url = config.url || ''
-        const isLogout = /\/auth\/logout(\b|$)/.test(url)
+        const requiresAuth = !/\/auth\/logout(\b|$)/.test(url)
 
-        if (!isLogout && typeof window !== 'undefined') {
+        if (requiresAuth && typeof window !== 'undefined') {
           const token = localStorage.getItem('accessToken')
           if (token) {
             config.headers.Authorization = `Bearer ${token}`
@@ -66,12 +64,10 @@ export class ApiClient {
       }
     )
 
-    // Response interceptor to handle API responses
     this.instance.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response) {
-          // Server responded with error
           const apiResponse = error.response.data as ApiResponse
           throw new ApiError(
             apiResponse.error?.message || 'An error occurred',
@@ -80,10 +76,8 @@ export class ApiClient {
             apiResponse.error?.details
           )
         } else if (error.request) {
-          // Request was made but no response
           throw new ApiError('Network error: Unable to reach server', 'NETWORK_ERROR')
         } else {
-          // Something else happened
           throw new ApiError(error.message, 'UNKNOWN_ERROR')
         }
       }

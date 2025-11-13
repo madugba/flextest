@@ -34,7 +34,7 @@ export async function getActiveScoreConfiguration(centerId: string): Promise<Sco
   try {
     const response = await apiClient.get<ScoreConfiguration>(`${BASE_URL}/active/${centerId}`);
     return response.data || null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
