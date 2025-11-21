@@ -11,9 +11,9 @@ Flextest helps exam centers manage candidates, sessions, and realtime monitoring
 ## Quick Start
 1. Install Node.js 20+ and npm 10+ (matching the backend requirements).
 2. From this folder:
-   ```bash
+```bash
    npm install
-   npm run dev
+npm run dev
    ```
 3. Visit http://localhost:3001 to browse the dashboard.
 

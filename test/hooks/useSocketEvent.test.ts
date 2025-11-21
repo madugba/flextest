@@ -17,7 +17,7 @@ describe('useSocketEvent Hook', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockUseSocket.mockReturnValue({
-      socket: mockSocket as any,
+      socket: mockSocket as ReturnType<typeof useSocket>['socket'],
       state: {
         status: 'connected',
         connected: true,
@@ -76,8 +76,8 @@ describe('useSocketEvent Hook', () => {
     const handler1 = jest.fn()
     const handler2 = jest.fn()
 
-    let subscribedListener: ((...args: any[]) => void) | undefined
-    mockSocket.on.mockImplementation((_event, listener: any) => {
+    let subscribedListener: ((...args: unknown[]) => void) | undefined
+    mockSocket.on.mockImplementation((_event, listener: (...args: unknown[]) => void) => {
       subscribedListener = listener
       return jest.fn()
     })
@@ -94,14 +94,14 @@ describe('useSocketEvent Hook', () => {
     expect(typeof subscribedListener).toBe('function')
 
     // Fire event -> should call handler1
-    subscribedListener && subscribedListener({ id: '1' })
+    if (subscribedListener) subscribedListener({ id: '1' })
     expect(handler1).toHaveBeenCalledTimes(1)
 
     // Update handler
     rerender({ handler: handler2 })
 
     // Fire event again -> should call handler2 (updated via ref)
-    subscribedListener && subscribedListener({ id: '2' })
+    if (subscribedListener) subscribedListener({ id: '2' })
     expect(handler2).toHaveBeenCalledTimes(1)
 
     // Ensure no additional subscriptions happened
