@@ -1,7 +1,6 @@
 import { generateQuestions } from '@/shared/services/ai-generation.service'
 import type { AIModelConfiguration } from '@/entities/ai-model'
 import OpenAI from 'openai'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 jest.mock('openai')
 jest.mock('@google/generative-ai')
@@ -38,7 +37,7 @@ describe('AI Generation Service', () => {
         },
       }
 
-      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as any)
+      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as unknown as OpenAI)
 
       const result = await generateQuestions({
         model: mockModel,
@@ -77,7 +76,7 @@ describe('AI Generation Service', () => {
         },
       }
 
-      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as any)
+      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as unknown as OpenAI)
 
       const result = await generateQuestions({
         model: mockModel,
@@ -128,7 +127,7 @@ describe('AI Generation Service', () => {
         },
       }
 
-      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as any)
+      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as unknown as OpenAI)
 
       const result = await generateQuestions({
         model: mockModel,
@@ -158,7 +157,7 @@ describe('AI Generation Service', () => {
         },
       }
 
-      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as any)
+      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as unknown as OpenAI)
 
       // Trigger failures to open circuit breaker
       for (let i = 0; i < 3; i++) {
@@ -188,7 +187,7 @@ describe('AI Generation Service', () => {
     it('should throw error for unsupported provider', async () => {
       const invalidModel: AIModelConfiguration = {
         id: 'invalid',
-        provider: 'INVALID' as any,
+        provider: 'INVALID' as AIModelConfiguration['provider'],
         modelName: 'test',
         apiKey: 'key',
       }
@@ -229,7 +228,7 @@ describe('AI Generation Service', () => {
         },
       }
 
-      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as any)
+      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as unknown as OpenAI)
 
       await expect(
         generateQuestions({
@@ -278,7 +277,7 @@ describe('AI Generation Service', () => {
         },
       }
 
-      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as any)
+      ;(OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => mockOpenAI as unknown as OpenAI)
 
       await expect(
         generateQuestions({

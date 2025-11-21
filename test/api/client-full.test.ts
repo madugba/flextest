@@ -38,7 +38,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>
 
 describe('ApiClient Full Tests', () => {
   let mockAxiosInstance: jest.Mocked<AxiosInstance>
-  let responseErrorHandler: ((error: any) => any) | undefined
+  let responseErrorHandler: ((error: unknown) => unknown) | undefined
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -63,12 +63,12 @@ describe('ApiClient Full Tests', () => {
           }),
         },
       },
-    } as any
+    } as unknown as jest.Mocked<AxiosInstance>
 
-    mockedAxios.create.mockReturnValue(mockAxiosInstance as any)
+    mockedAxios.create.mockReturnValue(mockAxiosInstance)
   })
 
-  const triggerResponseError = (error: any) => {
+  const triggerResponseError = (error: unknown) => {
     if (!responseErrorHandler) {
       return Promise.reject(error)
     }
@@ -90,7 +90,7 @@ describe('ApiClient Full Tests', () => {
         },
       }
 
-      mockAxiosInstance.request.mockResolvedValue(mockResponse as any)
+      mockAxiosInstance.request.mockResolvedValue(mockResponse)
 
       const client = new ApiClient('http://localhost:3000')
       const result = await client.get('/test')
@@ -111,7 +111,7 @@ describe('ApiClient Full Tests', () => {
         },
       }
 
-      mockAxiosInstance.request.mockResolvedValue(mockResponse as any)
+      mockAxiosInstance.request.mockResolvedValue(mockResponse)
 
       const client = new ApiClient('http://localhost:3000')
       const result = await client.post('/test', { name: 'Test' })
@@ -133,7 +133,7 @@ describe('ApiClient Full Tests', () => {
         },
       }
 
-      mockAxiosInstance.request.mockResolvedValue(mockResponse as any)
+      mockAxiosInstance.request.mockResolvedValue(mockResponse)
 
       const client = new ApiClient('http://localhost:3000')
       await client.put('/test/1', { name: 'Updated' })
@@ -154,7 +154,7 @@ describe('ApiClient Full Tests', () => {
         },
       }
 
-      mockAxiosInstance.request.mockResolvedValue(mockResponse as any)
+      mockAxiosInstance.request.mockResolvedValue(mockResponse)
 
       const client = new ApiClient('http://localhost:3000')
       await client.patch('/test/1', { name: 'Patched' })
@@ -174,7 +174,7 @@ describe('ApiClient Full Tests', () => {
         },
       }
 
-      mockAxiosInstance.request.mockResolvedValue(mockResponse as any)
+      mockAxiosInstance.request.mockResolvedValue(mockResponse)
 
       const client = new ApiClient('http://localhost:3000')
       await client.delete('/test/1')
@@ -190,7 +190,7 @@ describe('ApiClient Full Tests', () => {
     it('should add auth token to requests', () => {
       localStorage.setItem('accessToken', 'test-token-123')
 
-      const client = new ApiClient('http://localhost:3000')
+      new ApiClient('http://localhost:3000')
 
       // Get the request interceptor
       const requestInterceptor = mockAxiosInstance.interceptors.request.use.mock.calls[0]?.[0]
@@ -213,7 +213,7 @@ describe('ApiClient Full Tests', () => {
     it('should not add token to logout endpoint', () => {
       localStorage.setItem('accessToken', 'test-token-123')
 
-      const client = new ApiClient('http://localhost:3000')
+      new ApiClient('http://localhost:3000')
       const requestInterceptor = mockAxiosInstance.interceptors.request.use.mock.calls[0]?.[0]
       if (!requestInterceptor) {
         expect(mockAxiosInstance.interceptors.request.use).toHaveBeenCalled()
@@ -231,7 +231,7 @@ describe('ApiClient Full Tests', () => {
     })
 
     it('should handle missing token gracefully', () => {
-      const client = new ApiClient('http://localhost:3000')
+      new ApiClient('http://localhost:3000')
       const requestInterceptor = mockAxiosInstance.interceptors.request.use.mock.calls[0]?.[0]
       if (!requestInterceptor) {
         expect(mockAxiosInstance.interceptors.request.use).toHaveBeenCalled()

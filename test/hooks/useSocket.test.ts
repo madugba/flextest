@@ -26,7 +26,7 @@ describe('useSocket Hook', () => {
     }
 
     mockUseSocketContext.mockReturnValue({
-      socket: mockSocket as any,
+      socket: mockSocket as ReturnType<typeof useSocketContext>['socket'],
       state: mockState,
       isConnected: true,
     })

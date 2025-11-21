@@ -38,7 +38,7 @@ describe('SocketClient', () => {
         },
       }
 
-      mockedIo.mockReturnValue(mockSocket as any)
+      mockedIo.mockReturnValue(mockSocket as unknown as ReturnType<typeof io>)
 
       const client = getSocketClient()
       const socket = client.connect()
@@ -61,7 +61,7 @@ describe('SocketClient', () => {
         },
       }
 
-      mockedIo.mockReturnValue(mockSocket as any)
+      mockedIo.mockReturnValue(mockSocket as unknown as ReturnType<typeof io>)
 
       const client = getSocketClient()
       const socket1 = client.connect()
@@ -85,7 +85,7 @@ describe('SocketClient', () => {
         },
       }
 
-      mockedIo.mockReturnValue(mockSocket as any)
+      mockedIo.mockReturnValue(mockSocket as unknown as ReturnType<typeof io>)
 
       const client = getSocketClient()
       client.connect()

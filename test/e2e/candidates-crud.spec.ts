@@ -24,7 +24,7 @@ test.describe('CRUD Operations', () => {
 
     // Mock candidates list
     await page.route('**/v1/api/candidates**', async (route) => {
-      const url = new URL(route.request().url())
+      new URL(route.request().url())
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
