@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   getSessionStatistics,
   getSessionDetails,
@@ -23,6 +23,8 @@ export function useMonitoringData(sessionId?: string) {
   const queryClient = useQueryClient()
   const { socket } = useSocket()
 
+  const cacheDurationMs = 60 * 1000
+
   const {
     data: sessionStats,
     isLoading: isLoadingStats,
@@ -32,8 +34,10 @@ export function useMonitoringData(sessionId?: string) {
     queryKey: ['monitoring', 'session', sessionId, 'statistics'],
     queryFn: () => getSessionStatistics(sessionId!),
     enabled: Boolean(sessionId),
-    staleTime: 0,
+    staleTime: cacheDurationMs,
+    gcTime: cacheDurationMs * 5,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 
   const {
@@ -45,9 +49,13 @@ export function useMonitoringData(sessionId?: string) {
     queryKey: ['monitoring', 'session', sessionId, 'details'],
     queryFn: () => getSessionDetails(sessionId!),
     enabled: Boolean(sessionId),
-    staleTime: 0,
+    staleTime: cacheDurationMs,
+    gcTime: cacheDurationMs * 5,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
+
+  const progressSeedRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!sessionId) return
@@ -58,41 +66,55 @@ export function useMonitoringData(sessionId?: string) {
     }
   }, [sessionId, socket])
 
-  useEffect(() => {
-    if (sessionId && sessionDetails) {
-      getCandidatesProgress(sessionId)
-        .then((progressData) => {
-          queryClient.setQueryData<SessionMonitoringDetails>(
-            ['monitoring', 'session', sessionId, 'details'],
-            (oldData) => {
-              if (!oldData) return oldData
-              const progressMap = new Map(
-                progressData.map(p => [p.candidateId, p])
-              )
-              const updatedCandidates = oldData.candidates.map((candidate) => {
-                const progress = progressMap.get(candidate.id)
-                if (progress) {
-                  return {
-                    ...candidate,
-                    totalQuestions: progress.totalQuestions,
-                    attempted: progress.totalAttempted,
-                  }
-                }
-                return candidate
-              })
+  const syncCandidatesProgress = useCallback(async () => {
+    if (!sessionId) return
+    try {
+      const progressData = await getCandidatesProgress(sessionId)
+      queryClient.setQueryData<SessionMonitoringDetails>(
+        ['monitoring', 'session', sessionId, 'details'],
+        (oldData) => {
+          if (!oldData) return oldData
 
+          const progressMap = new Map(
+            progressData.map((p) => [p.candidateId, p])
+          )
+
+          const updatedCandidates = oldData.candidates.map((candidate) => {
+            const progress = progressMap.get(candidate.id)
+            if (progress) {
               return {
-                ...oldData,
-                candidates: updatedCandidates,
+                ...candidate,
+                totalQuestions: progress.totalQuestions,
+                attempted: progress.totalAttempted,
               }
             }
-          )
-        })
-        .catch((error) => {
-          void error
-        })
+            return candidate
+          })
+
+          return {
+            ...oldData,
+            candidates: updatedCandidates,
+          }
+        }
+      )
+    } catch (error) {
+      console.error('[useMonitoringData] Failed to sync progress', error)
     }
-  }, [sessionId, sessionDetails, queryClient])
+  }, [sessionId, queryClient])
+
+  useEffect(() => {
+    if (!sessionId || progressSeedRef.current === sessionId) {
+      return
+    }
+    progressSeedRef.current = sessionId
+    void syncCandidatesProgress()
+
+    return () => {
+      if (progressSeedRef.current === sessionId) {
+        progressSeedRef.current = null
+      }
+    }
+  }, [sessionId, syncCandidatesProgress])
 
   const controlMutation = useMutation({
     mutationFn: ({ action, reason }: SessionControlRequest) =>
@@ -111,7 +133,6 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'statistics'],
       (oldData) => {
         if (!oldData) {
-          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'] })
           return oldData
         }
         return {
@@ -128,7 +149,6 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'details'],
       (oldData) => {
         if (!oldData) {
-          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
           return oldData
         }
         const existingIndex = oldData.candidates.findIndex(c => c.id === data.candidate.id)
@@ -184,9 +204,6 @@ export function useMonitoringData(sessionId?: string) {
         }
       }
     )
-
-    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'], exact: true })
-    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'], exact: true })
   }, [sessionId, queryClient])
 
   const handleCandidateLogout = useCallback((data: CandidateLogoutEvent) => {
@@ -198,7 +215,6 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'statistics'],
       (oldData) => {
         if (!oldData) {
-          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'] })
           return oldData
         }
         return {
@@ -215,7 +231,6 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'details'],
       (oldData) => {
         if (!oldData) {
-          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
           return oldData
         }
         const updatedCandidates = oldData.candidates.map((c) => {
@@ -238,9 +253,6 @@ export function useMonitoringData(sessionId?: string) {
         }
       }
     )
-
-    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'statistics'], exact: true })
-    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'], exact: true })
   }, [sessionId, queryClient])
 
   const handleExamStarted = useCallback((data: ExamStartedEvent) => {
@@ -252,7 +264,6 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'details'],
       (oldData) => {
         if (!oldData) {
-          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
           return oldData
         }
         const updatedCandidates = oldData.candidates.map((c) => {
@@ -283,7 +294,6 @@ export function useMonitoringData(sessionId?: string) {
       ['monitoring', 'session', sessionId, 'details'],
       (oldData) => {
         if (!oldData) {
-          queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId, 'details'] })
           return oldData
         }
         const updatedCandidates = oldData.candidates.map((c) => {
@@ -326,6 +336,7 @@ export function useMonitoringData(sessionId?: string) {
     if (sessionDetails) {
       refetchDetails()
     }
+    void syncCandidatesProgress()
   }
 
   return {

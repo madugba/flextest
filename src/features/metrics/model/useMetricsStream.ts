@@ -12,6 +12,7 @@ export function useMetricsStream() {
   const queryClient = useQueryClient()
   const eventSourceRef = useRef<StreamConnection | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const reconnectDelayRef = useRef(5_000)
 
   const pendingUpdatesRef = useRef<{
     system?: SystemMetrics
@@ -61,6 +62,45 @@ export function useMetricsStream() {
       }, batchDelayMs)
     }
 
+    const baseDelayMs = 5_000
+    const maxDelayMs = 60_000
+
+    const getRetryAfterMs = (response: Response) => {
+      const retryAfter = response.headers.get('retry-after')
+      if (!retryAfter) return undefined
+      const asNumber = Number(retryAfter)
+      if (!Number.isNaN(asNumber)) {
+        return asNumber * 1000
+      }
+      const retryDate = Date.parse(retryAfter)
+      if (!Number.isNaN(retryDate)) {
+        return Math.max(retryDate - Date.now(), baseDelayMs)
+      }
+      return undefined
+    }
+
+    const resetReconnectDelay = () => {
+      reconnectDelayRef.current = baseDelayMs
+    }
+
+    const nextReconnectDelay = (minimumDelay?: number) => {
+      const current = reconnectDelayRef.current
+      const baseline = minimumDelay ? Math.max(current, minimumDelay) : current
+      const next = Math.min(Math.max(baseline * 1.5, baseDelayMs), maxDelayMs)
+      reconnectDelayRef.current = next
+      return next
+    }
+
+    const scheduleReconnect = (delay: number) => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
+      reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = undefined
+        connectSSE()
+      }, delay)
+    }
+
     const connectSSE = async () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
@@ -84,13 +124,20 @@ export function useMetricsStream() {
         })
 
         if (!response.ok) {
-          throw new Error(`SSE connection failed: ${response.status}`)
+          const retryDelay = getRetryAfterMs(response) ?? nextReconnectDelay()
+          console.warn(`SSE connection failed (${response.status}). Retrying in ${retryDelay / 1000}s`)
+          scheduleReconnect(retryDelay)
+          return
         }
 
         if (!response.body) {
-          throw new Error('Response body is null')
+          const retryDelay = nextReconnectDelay()
+          console.warn(`SSE response body empty. Retrying in ${retryDelay / 1000}s`)
+          scheduleReconnect(retryDelay)
+          return
         }
 
+        resetReconnectDelay()
         const reader = response.body.getReader()
         const decoder = new TextDecoder()
         let buffer = ''
@@ -197,14 +244,9 @@ export function useMetricsStream() {
         processStream()
       } catch (error) {
         console.error('❌ SSE connection error:', error)
-
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current)
-        }
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('🔄 Reconnecting to metrics stream...')
-          connectSSE()
-        }, 5000)
+        const retryDelay = nextReconnectDelay()
+        console.log(`🔄 Reconnecting to metrics stream in ${retryDelay / 1000}s...`)
+        scheduleReconnect(retryDelay)
       }
     }
 

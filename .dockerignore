@@ -68,3 +68,31 @@ Thumbs.db
 
 # Playwright
 .playwright-mcp/
+
+# Additional exclusions for faster builds
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+__mocks__/
+test/
+tests/
+e2e/
+coverage/
+*.md
+!README.md
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log
+.DS_Store
+Thumbs.db
+.cache/
+.temp/
+temp/
+tmp/
+*.tmp
+*.bak
+*.backup

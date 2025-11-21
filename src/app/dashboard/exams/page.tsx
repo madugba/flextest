@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation'
 import { DashboardHeader } from '@/widgets/dashboard/ui/DashboardHeader'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
-import { MoreVertical } from 'lucide-react'
+import { Label } from '@/shared/ui/label'
+import { MoreVertical, CalendarClock, AlertTriangle } from 'lucide-react'
 import {
   getAllExamSessions,
   createExamSession,
   updateExamSession,
   deleteExamSession,
   importExamSessionsFromApi,
+  rescheduleExamSession,
   type ExamSession,
   type SessionStatus
 } from '@/entities/exam-session'
@@ -58,8 +60,10 @@ export default function ExamSessionsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
   const [selectedSession, setSelectedSession] = useState<ExamSession | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [confirmSessionName, setConfirmSessionName] = useState('')
 
   const [selectedConfigId, setSelectedConfigId] = useState('')
   const [selectedConfig, setSelectedConfig] = useState<APIConfiguration | null>(null)
@@ -326,6 +330,40 @@ export default function ExamSessionsPage() {
     setShowDeleteDialog(true)
   }
 
+  const openRescheduleDialog = (session: ExamSession) => {
+    setSelectedSession(session)
+    setConfirmSessionName('')
+    setShowRescheduleDialog(true)
+  }
+
+  const handleReschedule = async () => {
+    if (!selectedSession) return
+
+    // Validate confirmation
+    if (confirmSessionName !== selectedSession.name) {
+      toast.error('Session name does not match')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      await rescheduleExamSession(selectedSession.id)
+      toast.success('Exam session rescheduled successfully', {
+        description: 'All candidate progress and answers have been cleared',
+      })
+      setShowRescheduleDialog(false)
+      setSelectedSession(null)
+      setConfirmSessionName('')
+      await fetchExamSessions()
+    } catch (error) {
+      toast.error('Failed to reschedule exam session', {
+        description: error instanceof Error ? error.message : 'An error occurred',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const filteredSessions = examSessions.filter((session) =>
     session.name.toLowerCase().includes(search.toLowerCase())
   )
@@ -488,6 +526,9 @@ export default function ExamSessionsPage() {
                               Upload Questions
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => openRescheduleDialog(session)}>
+                              Reschedule Exam
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEditDialog(session)}>
                               Edit
                             </DropdownMenuItem>
@@ -940,6 +981,68 @@ export default function ExamSessionsPage() {
                 className="bg-red-600 hover:bg-red-700"
               >
                 {isSubmitting ? 'Deleting...' : 'Delete Session'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Reschedule Confirmation Dialog */}
+        <AlertDialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-yellow-600">
+                <CalendarClock className="h-5 w-5" />
+                Reschedule Exam Session
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to reschedule &quot;{selectedSession?.name}&quot;? This will reset all progress and cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <div className="font-semibold mb-1">Warning: This action will reset the exam session!</div>
+                    <div className="mb-2">This will permanently remove:</div>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>All candidate progress (timer data)</li>
+                      <li>All submitted answers</li>
+                      <li>All exam results</li>
+                      <li>Session status will be reset to SCHEDULED</li>
+                      <li>All candidates will be set to PENDING</li>
+                    </ul>
+                    <div className="mt-2 font-semibold">This action cannot be undone!</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-session-name">
+                  Type the session name &quot;{selectedSession?.name}&quot; to confirm:
+                </Label>
+                <Input
+                  id="confirm-session-name"
+                  value={confirmSessionName}
+                  onChange={(e) => setConfirmSessionName(e.target.value)}
+                  placeholder={selectedSession?.name}
+                  className="font-mono"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmSessionName('')} disabled={isSubmitting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleReschedule}
+                disabled={confirmSessionName !== selectedSession?.name || isSubmitting}
+                className="bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-600"
+              >
+                {isSubmitting ? 'Rescheduling...' : 'Reschedule Session'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

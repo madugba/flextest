@@ -71,8 +71,8 @@ export default function SubjectUploadPage() {
   const params = useParams()
   const router = useRouter()
 
-  const sessionId = params.sessionId as string
-  const subjectId = params.subjectId as string
+  const sessionId = (params?.sessionId as string) || ''
+  const subjectId = (params?.subjectId as string) || ''
 
   const [subject, setSubject] = useState<Subject | null>(null)
   const [session, setSession] = useState<ExamSession | null>(null)
@@ -415,22 +415,75 @@ export default function SubjectUploadPage() {
 
       console.log('[handleFileSelect] Parsed data:', jsonData)
 
+      // Helper function to get field value with case-insensitive matching
+      const getField = (row: Record<string, unknown>, fieldName: string): unknown => {
+        // Try exact match first (most common case)
+        if (row[fieldName] !== undefined) {
+          return row[fieldName]
+        }
+        
+        // Try case-insensitive match
+        const lowerFieldName = fieldName.toLowerCase()
+        for (const key in row) {
+          if (key.toLowerCase() === lowerFieldName) {
+            return row[key]
+          }
+        }
+        
+        // Try normalized match (remove spaces, underscores)
+        const normalizedFieldName = fieldName.toLowerCase().replace(/[\s_]/g, '')
+        for (const key in row) {
+          const normalizedKey = key.toLowerCase().replace(/[\s_]/g, '')
+          if (normalizedKey === normalizedFieldName) {
+            return row[key]
+          }
+        }
+        
+        return undefined
+      }
+
+      // Get available columns from first row for better error messages
+      const availableColumns = jsonData.length > 0 ? Object.keys(jsonData[0] as Record<string, unknown>) : []
+      console.log('[handleFileSelect] Available columns:', availableColumns)
+
       const transformedQuestions = (jsonData as Record<string, unknown>[]).map((row, index) => {
-        if (!row.question || !row.optionA || !row.optionB || !row.optionC || !row.optionD || !row.answer) {
-          throw new Error(`Row ${index + 2} is missing required fields`)
+        // Get field values with case-insensitive matching
+        const question = getField(row, 'question')
+        const optionA = getField(row, 'optionA')
+        const optionB = getField(row, 'optionB')
+        const optionC = getField(row, 'optionC')
+        const optionD = getField(row, 'optionD')
+        const answer = getField(row, 'answer')
+
+        // Check for missing required fields with detailed error message
+        const missingFields: string[] = []
+        if (!question || String(question).trim() === '') missingFields.push('question')
+        if (!optionA || String(optionA).trim() === '') missingFields.push('optionA')
+        if (!optionB || String(optionB).trim() === '') missingFields.push('optionB')
+        if (!optionC || String(optionC).trim() === '') missingFields.push('optionC')
+        if (!optionD || String(optionD).trim() === '') missingFields.push('optionD')
+        if (!answer || String(answer).trim() === '') missingFields.push('answer')
+
+        if (missingFields.length > 0) {
+          throw new Error(
+            `Row ${index + 2} is missing required fields: ${missingFields.join(', ')}. ` +
+            `Found columns: ${availableColumns.join(', ')}. ` +
+            `Expected columns: question, optionA, optionB, optionC, optionD, answer (case-insensitive)`
+          )
         }
 
-        if (!['A', 'B', 'C', 'D'].includes(String(row.answer).toUpperCase())) {
-          throw new Error(`Row ${index + 2} has invalid answer (must be A, B, C, or D)`)
+        const answerStr = String(answer).toUpperCase().trim()
+        if (!['A', 'B', 'C', 'D'].includes(answerStr)) {
+          throw new Error(`Row ${index + 2} has invalid answer "${answer}" (must be A, B, C, or D)`)
         }
 
         return {
-          question: row.question.toString(),
-          optionA: row.optionA.toString(),
-          optionB: row.optionB.toString(),
-          optionC: row.optionC.toString(),
-          optionD: row.optionD.toString(),
-          answer: String(row.answer).toUpperCase() as AnswerOption
+          question: String(question).trim(),
+          optionA: String(optionA).trim(),
+          optionB: String(optionB).trim(),
+          optionC: String(optionC).trim(),
+          optionD: String(optionD).trim(),
+          answer: answerStr as AnswerOption
         }
       })
 
