@@ -1,4 +1,4 @@
-import { SessionScoresPage } from '@/pages/session-scores'
+import { SessionScoresPage } from '@/views/session-scores'
 
 interface ViewScoresPageProps {
   params: Promise<{
