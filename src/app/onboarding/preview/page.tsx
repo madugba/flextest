@@ -36,7 +36,7 @@ export default function OnboardingPreviewPage() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:3000/api/centers', {
+      const response = await fetch('https://flexdesk.sch.ng/api/centers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
