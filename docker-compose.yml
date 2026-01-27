@@ -189,52 +189,52 @@ services:
   # ============================================
   # FlexTest Backend (Fastify)
   # ============================================
-  flextest-backend:
-    platform: linux/amd64
-    image: volttechafrica/flextest-backend:latest
-    # container_name: flextest-backend
-    restart: unless-stopped
-    env_file:
-      - docker/config/common.env
+  # flextest-backend:
+  #   platform: linux/amd64
+  #   image: volttechafrica/flextest-backend:latest
+  #   # container_name: flextest-backend
+  #   restart: unless-stopped
+  #   env_file:
+  #     - docker/config/common.env
 
-    ports:
-      - "3000:8000"
-      - "${GRPC_PORT:-50051}:50051"
+  #   ports:
+  #     - "8000"
+  #     - "${GRPC_PORT:-50051}:50051"
 
-    environment:
-      NODE_ENV: production
-      # DATABASE_URL and DIRECT_URL loaded from common.env (properly URL-encoded)
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+  #   environment:
+  #     NODE_ENV: production
+  #     # DATABASE_URL and DIRECT_URL loaded from common.env (properly URL-encoded)
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
 
-    volumes:
-      - app_logs:/app/logs
+  #   volumes:
+  #     - app_logs:/app/logs
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      pgbouncer:
-        condition: service_started
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     pgbouncer:
+  #       condition: service_started
 
-    networks:
-      - flextest-network
+  #   networks:
+  #     - flextest-network
 
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/v1/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+  #   healthcheck:
+  #     test: ["CMD", "node", "-e", "require('http').get('http://localhost:8000/v1/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 60s
 
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 2G
+  #       reservations:
+  #         cpus: '0.5'
+  #         memory: 1G
 
   # ============================================
   # FlexTest Frontend (Next.js)
