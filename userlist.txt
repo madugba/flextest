@@ -1,0 +1,14 @@
+# PgBouncer User List
+# Format: "username" "password"
+# Password can be in plain text or MD5 hash (md5 + md5hash of password+username)
+#
+# For production, use MD5 hashes or scram-sha-256
+# Generate MD5 hash: echo -n "passwordusername" | md5sum
+# Then prepend "md5" to the result
+
+"postgres" "postgres"
+"admin" "admin"
+"stats" "stats"
+
+# Production example with MD5 hash:
+# "postgres" "md55e5e3061c2926f8f5b5b5b5b5b5b5b5b"
