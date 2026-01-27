@@ -200,7 +200,7 @@ services:
       - docker/config/common.env
 
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "${BACKEND_PORT:-3000}:8000"
       - "${GRPC_PORT:-50051}:50051"
 
     environment:
@@ -241,44 +241,44 @@ services:
   # ============================================
   # FlexTest Frontend (Next.js)
   # ============================================
-  flextest-frontend:
-    # platform: linux/amd64
-    image: volttechafrica/flextest:latest
-    container_name: flextest-frontend
-    restart: unless-stopped
-    env_file:
-      - docker/config/common.env
+  # flextest-frontend:
+  #   # platform: linux/amd64
+  #   image: volttechafrica/flextest:latest
+  #   container_name: flextest-frontend
+  #   restart: unless-stopped
+  #   env_file:
+  #     - docker/config/common.env
 
-    ports:
-      - "${FRONTEND_PORT:-3001}:3001"
+  #   ports:
+  #     - "${FRONTEND_PORT:-3001}:3001"
 
-    environment:
-      NODE_ENV: production
-      PORT: 3001
-      NEXT_PUBLIC_API_URL: http://flextest-backend:3000/v1/api
+  #   environment:
+  #     NODE_ENV: production
+  #     PORT: 3001
+  #     NEXT_PUBLIC_API_URL: http://flextest-backend:3000/v1/api
 
-    depends_on:
-      flextest-backend:
-        condition: service_healthy
+  #   depends_on:
+  #     flextest-backend:
+  #       condition: service_healthy
 
-    networks:
-      - flextest-network
+  #   networks:
+  #     - flextest-network
 
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+  #   healthcheck:
+  #     test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
 
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1'
+  #         memory: 1G
+  #       reservations:
+  #         cpus: '0.25'
+  #         memory: 512M
 
 # ============================================
 # Networks
