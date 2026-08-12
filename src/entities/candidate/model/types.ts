@@ -1,0 +1,91 @@
+export type CandidateStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUBMITTED' | 'ACTIVE'
+
+export interface Candidate {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  phone?: string
+  profileUrl?: string
+  isVerified: boolean
+  isActive: boolean
+  lastLoginAt?: string
+  picture?: string
+  surname?: string
+  firstname?: string
+  othername?: string
+  sessionId?: string
+  seatNumber?: number
+  status?: CandidateStatus
+  createdAt: string
+  updatedAt: string
+  session?: {
+    id: string
+    name: string
+    center?: {
+      id: string
+      centerName: string
+      address: string
+    }
+  }
+  subjectCombinations?: Array<{
+    id: string
+    subject: {
+      id: string
+      name: string
+    }
+  }>
+}
+
+export interface CreateCandidateRequest {
+  email?: string
+  surname: string
+  firstname: string
+  othername?: string
+  phone?: string
+  sessionId: string
+  picture?: string
+  subjects: string[]
+}
+
+export interface UpdateCandidateRequest {
+  email?: string
+  firstName?: string
+  lastName?: string
+  phone?: string
+  profileUrl?: string
+  isActive?: boolean
+  subjects?: string[]
+  sessionId?: string
+}
+
+export interface CandidatePaginationResponse {
+  candidates: Candidate[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+export interface CandidateFilters {
+  page?: number
+  limit?: number
+  search?: string
+  status?: CandidateStatus
+  sessionId?: string
+}
+
+export interface ImportCandidatesRequest {
+  candidates: Array<{
+    email?: string
+    surname: string
+    firstname: string
+    othername?: string
+    phone?: string
+    sessionId: string
+    picture?: string
+    subjects: string[]
+  }>
+}

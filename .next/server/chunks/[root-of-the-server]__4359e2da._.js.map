@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 55, "column": 0}, "map": {"version":3,"sources":["file:///Users/emanuelchinonsomadugba_fuxam/Documents/Work/Flextest_exam/examiner/src/app/api/health/route.ts"],"sourcesContent":["import { NextResponse } from 'next/server'\n\nexport const dynamic = 'force-dynamic'\n\nexport function GET() {\n  return NextResponse.json({ status: 'ok', ts: Date.now() }, { status: 200 })\n}\n"],"names":[],"mappings":";;;;;;AAAA;;AAEO,MAAM,UAAU;AAEhB,SAAS;IACd,OAAO,gJAAY,CAAC,IAAI,CAAC;QAAE,QAAQ;QAAM,IAAI,KAAK,GAAG;IAAG,GAAG;QAAE,QAAQ;IAAI;AAC3E","debugId":null}}]
+}

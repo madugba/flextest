@@ -1,0 +1,13 @@
+{
+  "/api/health/route": "app/api/health/route.js",
+  "/api/import/proxy/route": "app/api/import/proxy/route.js",
+  "/api/sessions/[sessionId]/scores/route": "app/api/sessions/[sessionId]/scores/route.js",
+  "/api/sessions/[sessionId]/stats/route": "app/api/sessions/[sessionId]/stats/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/reports/[sessionId]/scores/page": "app/dashboard/reports/[sessionId]/scores/page.js",
+  "/dashboard/reports/page": "app/dashboard/reports/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/subjects/page": "app/dashboard/subjects/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/login/page": "app/login/page.js"
+}

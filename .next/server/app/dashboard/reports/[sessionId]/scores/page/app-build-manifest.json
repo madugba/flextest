@@ -1,0 +1,43 @@
+{
+  "pages": {
+    "/dashboard/reports/[sessionId]/scores/page": [
+      "static/chunks/node_modules_next_dist_8db7fb1f._.js",
+      "static/chunks/src_app_favicon_ico_mjs_243aa161._.js",
+      "static/chunks/[root-of-the-server]__0f0ba101._.css",
+      "static/chunks/node_modules_b6ebd595._.js",
+      "static/chunks/src_eb09d85f._.js",
+      "static/chunks/src_app_layout_tsx_0a548d63._.js",
+      "static/chunks/node_modules_next_dist_02409dcd._.js",
+      "static/chunks/src_app_not-found_tsx_69f86293._.js",
+      "static/chunks/node_modules_next_dist_client_components_builtin_global-error_69f86293.js",
+      "static/chunks/node_modules_75affb4a._.js",
+      "static/chunks/src_4fbe6578._.js",
+      "static/chunks/src_app_dashboard_layout_tsx_69f86293._.js",
+      "static/chunks/src_be66b7da._.js",
+      "static/chunks/node_modules_xlsx_xlsx_mjs_fef98e92._.js",
+      "static/chunks/node_modules_brotli_aa4cc70f._.js",
+      "static/chunks/node_modules_fontkit_dist_browser-module_mjs_393a1dbe._.js",
+      "static/chunks/node_modules_pako_lib_59d1daeb._.js",
+      "static/chunks/node_modules_crypto-js_59fbd1d6._.js",
+      "static/chunks/node_modules_@react-pdf_png-js_lib_png-js_browser_6e630089.js",
+      "static/chunks/node_modules_@react-pdf_pdfkit_lib_pdfkit_browser_bb07d1a8.js",
+      "static/chunks/node_modules_yoga-layout_dist_b5bffb70._.js",
+      "static/chunks/node_modules_@react-pdf_layout_lib_index_035642ed.js",
+      "static/chunks/node_modules_@react-pdf_reconciler_lib_6fedbd67._.js",
+      "static/chunks/node_modules_@radix-ui_04847875._.js",
+      "static/chunks/node_modules_@floating-ui_1b6e7b6d._.js",
+      "static/chunks/node_modules_@react-pdf_2e914fe8._.js",
+      "static/chunks/node_modules_ae761f96._.js",
+      "static/chunks/src_app_dashboard_reports_[sessionId]_scores_page_tsx_2a13300e._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_57d40746._.js",
+      "static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js",
+      "static/chunks/node_modules_next_dist_compiled_next-devtools_index_a9cb0712.js",
+      "static/chunks/node_modules_next_dist_compiled_5150ccfd._.js",
+      "static/chunks/node_modules_next_dist_client_cf1d9188._.js",
+      "static/chunks/node_modules_next_dist_b0daae9a._.js",
+      "static/chunks/node_modules_@swc_helpers_cjs_b3dc30d6._.js",
+      "static/chunks/_a0ff3932._.js",
+      "static/chunks/turbopack-_cdba956c._.js"
+    ]
+  }
+}

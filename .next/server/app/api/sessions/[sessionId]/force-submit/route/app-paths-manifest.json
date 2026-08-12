@@ -1,0 +1,3 @@
+{
+  "/api/sessions/[sessionId]/force-submit/route": "app/api/sessions/[sessionId]/force-submit/route.js"
+}
