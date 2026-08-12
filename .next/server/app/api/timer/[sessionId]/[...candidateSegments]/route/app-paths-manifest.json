@@ -1,0 +1,3 @@
+{
+  "/api/timer/[sessionId]/[...candidateSegments]/route": "app/api/timer/[sessionId]/[...candidateSegments]/route.js"
+}

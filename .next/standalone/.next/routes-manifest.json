@@ -1,0 +1,207 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/timer/[sessionId]",
+      "regex": "^/api/timer/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPsessionId": "nxtPsessionId"
+      },
+      "namedRegex": "^/api/timer/(?<nxtPsessionId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/dashboard/reports/[sessionId]/scores",
+      "regex": "^/dashboard/reports/([^/]+?)/scores(?:/)?$",
+      "routeKeys": {
+        "nxtPsessionId": "nxtPsessionId"
+      },
+      "namedRegex": "^/dashboard/reports/(?<nxtPsessionId>[^/]+?)/scores(?:/)?$"
+    },
+    {
+      "page": "/questions/upload/[sessionId]",
+      "regex": "^/questions/upload/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPsessionId": "nxtPsessionId"
+      },
+      "namedRegex": "^/questions/upload/(?<nxtPsessionId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/questions/upload/[sessionId]/[subjectId]",
+      "regex": "^/questions/upload/([^/]+?)/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPsessionId": "nxtPsessionId",
+        "nxtPsubjectId": "nxtPsubjectId"
+      },
+      "namedRegex": "^/questions/upload/(?<nxtPsessionId>[^/]+?)/(?<nxtPsubjectId>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/candidate_login",
+      "regex": "^/candidate_login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/candidate_login(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/admins",
+      "regex": "^/dashboard/admins(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/admins(?:/)?$"
+    },
+    {
+      "page": "/dashboard/candidates",
+      "regex": "^/dashboard/candidates(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/candidates(?:/)?$"
+    },
+    {
+      "page": "/dashboard/candidates/new",
+      "regex": "^/dashboard/candidates/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/candidates/new(?:/)?$"
+    },
+    {
+      "page": "/dashboard/centers",
+      "regex": "^/dashboard/centers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/centers(?:/)?$"
+    },
+    {
+      "page": "/dashboard/exams",
+      "regex": "^/dashboard/exams(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/exams(?:/)?$"
+    },
+    {
+      "page": "/dashboard/monitoring",
+      "regex": "^/dashboard/monitoring(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/monitoring(?:/)?$"
+    },
+    {
+      "page": "/dashboard/profile",
+      "regex": "^/dashboard/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/profile(?:/)?$"
+    },
+    {
+      "page": "/dashboard/reports",
+      "regex": "^/dashboard/reports(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/reports(?:/)?$"
+    },
+    {
+      "page": "/dashboard/settings",
+      "regex": "^/dashboard/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/settings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/subjects",
+      "regex": "^/dashboard/subjects(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/subjects(?:/)?$"
+    },
+    {
+      "page": "/dashboard/subjects/confirm-import",
+      "regex": "^/dashboard/subjects/confirm\\-import(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/subjects/confirm\\-import(?:/)?$"
+    },
+    {
+      "page": "/error",
+      "regex": "^/error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/error(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/forgot-password",
+      "regex": "^/forgot\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/forgot\\-password(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/onboarding",
+      "regex": "^/onboarding(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/onboarding(?:/)?$"
+    },
+    {
+      "page": "/onboarding/preview",
+      "regex": "^/onboarding/preview(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/onboarding/preview(?:/)?$"
+    },
+    {
+      "page": "/onboarding/setup",
+      "regex": "^/onboarding/setup(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/onboarding/setup(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

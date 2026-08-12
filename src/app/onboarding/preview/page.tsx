@@ -1,0 +1,5 @@
+import { OnboardingPreviewPage } from '@/features/onboarding'
+
+export default function Page() {
+  return <OnboardingPreviewPage />
+}
