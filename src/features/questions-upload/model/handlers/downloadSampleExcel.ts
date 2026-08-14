@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { downloadSampleQuestionWorkbook } from '../../lib/question-excel'
+import { downloadSampleQuestionWorkbook } from '../../lib/sample-workbook'
 
 export function downloadSampleExcel(): void {
   downloadSampleQuestionWorkbook()

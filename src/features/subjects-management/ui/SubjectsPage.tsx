@@ -2,11 +2,11 @@
 
 import { DashboardHeader } from '@/widgets/dashboard'
 import { ImportSubjectsDialog } from '@/features/subject-import'
-import { Input } from '@/shared/ui/Input'
 import { useSubjectsPage } from '../model/useSubjectsPage'
 import { DeleteSubjectDialog } from './DeleteSubjectDialog'
 import { SubjectFormDialog } from './SubjectFormDialog'
 import { SubjectsHeader } from './SubjectsHeader'
+import { SubjectsSearchInput } from './SubjectsSearchInput'
 import { SubjectsTable } from './SubjectsTable'
 
 export function SubjectsPage() {
@@ -44,14 +44,7 @@ export function SubjectsPage() {
           onCreate={() => setShowCreateDialog(true)}
         />
 
-        <div className="max-w-md">
-          <Input
-            placeholder="Search subjects..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            fullWidth
-          />
-        </div>
+        <SubjectsSearchInput value={search} onChange={setSearch} />
 
         <SubjectsTable
           subjects={subjects}

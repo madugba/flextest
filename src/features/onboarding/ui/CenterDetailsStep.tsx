@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react'
 import type { CenterData } from '../model/types'
+import { StepTextField } from './StepTextField'
 
 interface CenterDetailsStepProps {
   centerData: CenterData
@@ -17,96 +18,52 @@ export function CenterDetailsStep({ centerData, onChange }: CenterDetailsStepPro
       </p>
 
       <div className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Center Name *
-          </label>
-          <input
-            type="text"
-            name="centerName"
-            value={centerData.centerName}
-            onChange={onChange}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-            placeholder="Enter center name"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address *
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={centerData.email}
-            onChange={onChange}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-            placeholder="center@example.com"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number *
-          </label>
-          <input
-            type="tel"
-            name="phone"
-            value={centerData.phone}
-            onChange={onChange}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-            placeholder="+234 xxx xxxx xxx"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Address *
-          </label>
-          <input
-            type="text"
-            name="address"
-            value={centerData.address}
-            onChange={onChange}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-            placeholder="Enter center address"
-          />
-        </div>
+        <StepTextField
+          name="centerName"
+          label="Center Name *"
+          value={centerData.centerName}
+          placeholder="Enter center name"
+          onChange={onChange}
+        />
+        <StepTextField
+          name="email"
+          label="Email Address *"
+          type="email"
+          value={centerData.email}
+          placeholder="center@example.com"
+          onChange={onChange}
+        />
+        <StepTextField
+          name="phone"
+          label="Phone Number *"
+          type="tel"
+          value={centerData.phone}
+          placeholder="+234 xxx xxxx xxx"
+          onChange={onChange}
+        />
+        <StepTextField
+          name="address"
+          label="Address *"
+          value={centerData.address}
+          placeholder="Enter center address"
+          onChange={onChange}
+        />
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              State *
-            </label>
-            <input
-              type="text"
-              name="state"
-              value={centerData.state}
-              onChange={onChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="State"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              LGA *
-            </label>
-            <input
-              type="text"
-              name="lga"
-              value={centerData.lga}
-              onChange={onChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="Local Government Area"
-            />
-          </div>
+          <StepTextField
+            name="state"
+            label="State *"
+            value={centerData.state}
+            placeholder="State"
+            onChange={onChange}
+          />
+          <StepTextField
+            name="lga"
+            label="LGA *"
+            value={centerData.lga}
+            placeholder="Local Government Area"
+            onChange={onChange}
+          />
         </div>
       </div>
     </div>

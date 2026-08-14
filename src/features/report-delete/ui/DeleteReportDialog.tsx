@@ -11,11 +11,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog'
-import { Input } from '@/shared/ui/Input'
-import { Label } from '@/shared/ui/label'
 import { Alert } from '@/shared/ui/Alert'
 import { useReportDelete } from '../model/useReportDelete'
-import { Trash2, AlertTriangle } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
+import { DeleteWarningBanner } from './DeleteWarningBanner'
+import { DeleteConfirmInput } from './DeleteConfirmInput'
 
 interface DeleteReportDialogProps {
   open: boolean
@@ -61,39 +61,8 @@ export function DeleteReportDialog({
             Delete Exam Session
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-red-800">
-                <p className="font-semibold mb-1">Warning: This action cannot be undone!</p>
-                <p>
-                  This will permanently delete the exam session
-                  {sessionName && <span className="font-semibold"> &quot;{sessionName}&quot;</span>} and all associated data:
-                </p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>All exam questions</li>
-                  <li>All candidate registrations</li>
-                  <li>All candidate answers</li>
-                  <li>All exam results</li>
-                  <li>All session logs</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirm-text" className="text-sm font-medium">
-                {sessionName 
-                  ? `Type the session name "${sessionName}" to confirm:` 
-                  : 'Type DELETE to confirm:'}
-              </Label>
-              <Input
-                id="confirm-text"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder={sessionName || 'DELETE'}
-                className="font-mono"
-                autoComplete="off"
-              />
-            </div>
+            <DeleteWarningBanner sessionName={sessionName} />
+            <DeleteConfirmInput sessionName={sessionName} value={confirmText} onChange={setConfirmText} />
 
             {error && (
               <Alert variant="destructive">{error}</Alert>
@@ -114,4 +83,3 @@ export function DeleteReportDialog({
     </AlertDialog>
   )
 }
-

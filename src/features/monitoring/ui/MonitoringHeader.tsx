@@ -1,5 +1,6 @@
 import { Button } from '@/shared/ui/Button'
 import { AlertTriangle, Pause, Play, RefreshCw } from 'lucide-react'
+import { SessionActionButton } from './SessionActionButton'
 
 interface MonitoringHeaderProps {
   isAutoRefresh: boolean
@@ -44,55 +45,45 @@ export function MonitoringHeader({
         </Button>
 
         {canStart && (
-          <Button
-            size="sm"
-            variant="default"
-            className="gap-2"
+          <SessionActionButton
             onClick={onStart}
             disabled={isControlling}
+            icon={<Play className="h-4 w-4" />}
           >
-            <Play className="h-4 w-4" />
             {isControlling ? 'Starting...' : 'Start Exam'}
-          </Button>
+          </SessionActionButton>
         )}
 
         {canResume && (
-          <Button
-            size="sm"
-            variant="default"
-            className="gap-2"
+          <SessionActionButton
             onClick={onResume}
             disabled={isControlling}
+            icon={<Play className="h-4 w-4" />}
           >
-            <Play className="h-4 w-4" />
             {isControlling ? 'Resuming...' : 'Resume Exam'}
-          </Button>
+          </SessionActionButton>
         )}
 
         {canPause && (
-          <Button
-            size="sm"
+          <SessionActionButton
             variant="outline"
-            className="gap-2"
             onClick={onPause}
             disabled={isControlling}
+            icon={<Pause className="h-4 w-4" />}
           >
-            <Pause className="h-4 w-4" />
             {isControlling ? 'Pausing...' : 'Pause Exam'}
-          </Button>
+          </SessionActionButton>
         )}
 
         {canEnd && (
-          <Button
-            size="sm"
+          <SessionActionButton
             variant="destructive"
-            className="gap-2"
             onClick={onEnd}
             disabled={isControlling}
+            icon={<AlertTriangle className="h-4 w-4" />}
           >
-            <AlertTriangle className="h-4 w-4" />
             {isControlling ? 'Ending...' : 'End Exam'}
-          </Button>
+          </SessionActionButton>
         )}
       </div>
     </div>

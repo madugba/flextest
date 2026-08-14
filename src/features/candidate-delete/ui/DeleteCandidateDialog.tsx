@@ -10,11 +10,12 @@ import {
 } from '@/shared/ui/dialog'
 import { Button } from '@/shared/ui/Button'
 import { Alert } from '@/shared/ui/Alert'
-import { Spinner } from '@/shared/ui/Spinner'
 import type { Candidate } from '@/entities/candidate'
 import { useDeleteCandidate } from '../model/useDeleteCandidate'
 import { getCandidateFullName } from '@/entities/candidate'
-import { ShieldAlert } from 'lucide-react'
+import { BlockedCandidateNotice } from './BlockedCandidateNotice'
+import { CandidateSummary } from './CandidateSummary'
+import { VerifyingStatus } from './VerifyingStatus'
 
 interface DeleteCandidateDialogProps {
   onSuccess?: () => void
@@ -50,40 +51,19 @@ export function DeleteCandidateDialog({ onSuccess, children }: DeleteCandidateDi
             </DialogDescription>
           </DialogHeader>
 
-          {/* Verifying */}
-          {verifyState === 'verifying' && (
-            <div className="flex items-center gap-3 py-4 text-sm text-muted-foreground">
-              <Spinner className="h-4 w-4" />
-              Checking session status…
-            </div>
-          )}
+          {verifyState === 'verifying' && <VerifyingStatus />}
 
-          {/* Blocked */}
           {verifyState === 'blocked' && candidateToDelete && (
             <div className="space-y-3">
-              <div className="rounded-md bg-muted p-4">
-                <p className="text-sm font-medium">{fullName}</p>
-                <p className="text-sm text-muted-foreground">{candidateToDelete.email}</p>
-              </div>
-              <div className="flex gap-2.5 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
-                <p>
-                  <strong>{fullName}</strong> has an active or submitted exam session in the system
-                  and cannot be deleted. This includes sessions they may have been previously
-                  assigned to, even if they have since been re-assigned.
-                </p>
-              </div>
+              <CandidateSummary fullName={fullName} email={candidateToDelete.email} />
+              <BlockedCandidateNotice fullName={fullName} />
             </div>
           )}
 
-          {/* Ready to delete */}
           {verifyState === 'ready' && candidateToDelete && (
             <>
               {error && <Alert variant="destructive">{error}</Alert>}
-              <div className="rounded-md bg-muted p-4">
-                <p className="text-sm font-medium">{fullName}</p>
-                <p className="text-sm text-muted-foreground">{candidateToDelete.email}</p>
-              </div>
+              <CandidateSummary fullName={fullName} email={candidateToDelete.email} />
             </>
           )}
 
