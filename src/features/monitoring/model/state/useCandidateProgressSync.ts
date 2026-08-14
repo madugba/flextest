@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getCandidatesProgress } from '@/entities/monitoring'

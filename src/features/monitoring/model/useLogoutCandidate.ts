@@ -1,3 +1,5 @@
+'use client'
+
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { logoutCandidate } from '@/entities/candidate/api/candidateApi'
 import { toast } from 'sonner'

@@ -1,3 +1,5 @@
+'use client'
+
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { controlSession, type SessionControlRequest } from '@/entities/monitoring'
 import { applyEndSessionSuccess } from './handlers/applyEndSessionSuccess'

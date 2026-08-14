@@ -1,3 +1,5 @@
+'use client'
+
 import { useQuery } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { getSessionStatistics, getSessionDetails } from '@/entities/monitoring'

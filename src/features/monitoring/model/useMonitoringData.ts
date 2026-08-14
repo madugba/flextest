@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMonitoringQueries } from './state/useMonitoringQueries'
