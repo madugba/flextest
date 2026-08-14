@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
-import { getCandidateById, updateCandidate, type Candidate, type UpdateCandidateRequest } from '@/entities/candidate'
+import { useEffect, useState } from 'react'
+import type { Candidate, UpdateCandidateRequest } from '@/entities/candidate'
 import { getAllSubjects, type Subject } from '@/entities/subject'
-import { ApiError } from '@/shared/api/client'
+import { createHandleClose } from './handlers/createHandleClose'
+import { createHandleOpen } from './handlers/createHandleOpen'
+import { createHandleSubmit } from './handlers/createHandleSubmit'
+import { createHandleToggleSubject } from './handlers/createHandleToggleSubject'
 
 export function useEditCandidate(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
@@ -35,97 +38,34 @@ export function useEditCandidate(onSuccess?: () => void) {
     setFormData(prev => ({ ...prev, subjects: selectedSubjects }))
   }, [selectedSubjects])
 
-  const handleOpen = async (candidateId: string) => {
-    try {
-      setIsOpen(true)
-      setIsFetching(true)
-      setError(null)
+  const handleOpen = createHandleOpen({
+    setIsOpen,
+    setIsFetching,
+    setError,
+    setCandidate,
+    setSelectedSubjects,
+    setFormData,
+  })
 
-      const data = await getCandidateById(candidateId)
-      setCandidate(data)
+  const handleClose = createHandleClose({
+    setIsOpen,
+    setCandidate,
+    setError,
+    setSelectedSubjects,
+    setFormData,
+  })
 
-      const currentSubjects = data.subjectCombinations?.map(combo => combo.subject.id) || []
-      setSelectedSubjects(currentSubjects)
+  const handleSubmit = createHandleSubmit({
+    candidate,
+    formData,
+    selectedSubjects,
+    setError,
+    setIsLoading,
+    handleClose,
+    onSuccess,
+  })
 
-      setFormData({
-        email: data.email || '',
-        phone: data.phone || '',
-        isActive: data.isActive,
-        subjects: currentSubjects,
-      })
-    } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to load candidate')
-      }
-    } finally {
-      setIsFetching(false)
-    }
-  }
-
-  const toggleSubject = (subjectId: string) => {
-    setSelectedSubjects(prev => {
-      if (prev.includes(subjectId)) {
-        return prev.filter(id => id !== subjectId)
-      } else if (prev.length < 6) {
-        return [...prev, subjectId]
-      }
-      return prev
-    })
-  }
-
-  const handleClose = () => {
-    setIsOpen(false)
-    setCandidate(null)
-    setError(null)
-    setSelectedSubjects([])
-    setFormData({
-      email: '',
-      phone: '',
-      isActive: true,
-      subjects: [],
-    })
-  }
-
-  const handleSubmit = async () => {
-    if (!candidate) return
-
-    if (selectedSubjects.length === 0) {
-      setError('Please select at least one subject')
-      return
-    }
-
-    if (selectedSubjects.length > 6) {
-      setError('Maximum of 6 subjects allowed')
-      return
-    }
-
-    try {
-      setError(null)
-      setIsLoading(true)
-
-      const submitData: UpdateCandidateRequest = {
-        email: formData.email?.trim() || undefined,
-        phone: formData.phone?.trim() || undefined,
-        isActive: formData.isActive,
-        subjects: selectedSubjects,
-      }
-
-      await updateCandidate(candidate.id, submitData)
-
-      handleClose()
-      onSuccess?.()
-    } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to update candidate')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const toggleSubject = createHandleToggleSubject({ setSelectedSubjects })
 
   return {
     isOpen,

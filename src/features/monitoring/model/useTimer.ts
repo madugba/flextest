@@ -2,21 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState, useMemo } from 'react'
-
-function formatSeconds(s: number): string {
-  const total = Math.max(0, Math.floor(s))
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const sec = total % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-}
-
-interface TimerApiResponse {
-  remainingSeconds: number
-  durationSeconds: number
-  status: 'RUNNING' | 'PAUSED' | 'STOPPED'
-  source?: string
-}
+import type { TimerApiResponse } from './types'
+import { formatSeconds } from './selectors/formatSeconds'
 
 export interface UseTimerOptions {
   sessionId: string | null

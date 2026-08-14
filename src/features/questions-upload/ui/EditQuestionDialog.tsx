@@ -10,19 +10,13 @@ import {
   DialogTitle,
 } from '@/shared/ui/dialog'
 import { Button } from '@/shared/ui/Button'
-import { Label } from '@/shared/ui/label'
 import { Alert } from '@/shared/ui/Alert'
-import { RichTextEditor } from '@/shared/ui/RichTextEditor'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/ui/select'
 import { AlertCircle, Edit2, Save } from 'lucide-react'
 import type { AnswerOption } from '@/entities/question'
 import type { QuestionFormData } from '../model/types'
+import { QuestionTextEditor } from './QuestionTextEditor'
+import { QuestionOptionFields } from './QuestionOptionFields'
+import { AnswerOptionSelect } from './AnswerOptionSelect'
 
 interface EditQuestionDialogProps {
   open: boolean
@@ -69,52 +63,14 @@ export function EditQuestionDialog({
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label>Question *</Label>
-            <RichTextEditor
-              value={formData.question}
-              onChange={(value) => setFormData({ ...formData, question: value })}
-              placeholder="Enter question text"
-              minHeight="180px"
-            />
-          </div>
+          <QuestionTextEditor formData={formData} setFormData={setFormData} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(['A', 'B', 'C', 'D'] as const).map((option) => (
-              <div key={option} className="space-y-2">
-                <Label>
-                  Option {option}
-                  {formData.answer === option && (
-                    <span className="ml-2 text-xs font-normal text-green-600">(correct)</span>
-                  )}
-                </Label>
-                <RichTextEditor
-                  value={formData[`option${option}`]}
-                  onChange={(value) => setFormData({ ...formData, [`option${option}`]: value })}
-                  placeholder={`Enter option ${option}`}
-                  minHeight="100px"
-                />
-              </div>
-            ))}
-          </div>
+          <QuestionOptionFields formData={formData} setFormData={setFormData} />
 
-          <div className="space-y-2">
-            <Label>Correct Answer *</Label>
-            <Select
-              value={formData.answer}
-              onValueChange={(value) => setFormData({ ...formData, answer: value as AnswerOption })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select correct answer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="A">Option A</SelectItem>
-                <SelectItem value="B">Option B</SelectItem>
-                <SelectItem value="C">Option C</SelectItem>
-                <SelectItem value="D">Option D</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <AnswerOptionSelect
+            value={formData.answer}
+            onChange={(value) => setFormData({ ...formData, answer: value as AnswerOption })}
+          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>

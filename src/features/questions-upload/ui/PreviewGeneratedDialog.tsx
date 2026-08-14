@@ -11,10 +11,9 @@ import {
 } from '@/shared/ui/dialog'
 import { Button } from '@/shared/ui/Button'
 import { Alert } from '@/shared/ui/Alert'
-import { Badge } from '@/shared/ui/Badge'
-import { Card } from '@/shared/ui/Card'
-import { CheckCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { CheckCircle, Loader2 } from 'lucide-react'
 import type { GeneratedQuestion } from '@/shared/services/ai-generation.service'
+import { GeneratedQuestionCard } from './GeneratedQuestionCard'
 
 interface PreviewGeneratedDialogProps {
   open: boolean
@@ -56,49 +55,7 @@ export function PreviewGeneratedDialog({
 
           <div className="space-y-6">
             {generatedQuestions.map((q, index) => (
-              <Card key={index} className="p-4">
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex items-start gap-3">
-                      <Badge variant="outline" className="shrink-0">
-                        Q{index + 1}
-                      </Badge>
-                      <div
-                        className="flex-1 text-sm leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: q.question }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-2 ml-11">
-                    {['A', 'B', 'C', 'D'].map((option) => {
-                      const optionKey = `option${option}` as keyof typeof q
-                      const isCorrect = q.answer === option
-                      return (
-                        <div
-                          key={option}
-                          className={`flex items-start gap-2 p-3 rounded-lg border ${
-                            isCorrect
-                              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-                              : 'bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-800'
-                          }`}
-                        >
-                          <span className="shrink-0 font-medium text-sm min-w-[20px]">
-                            {option}.
-                          </span>
-                          <span
-                            className="text-sm"
-                            dangerouslySetInnerHTML={{ __html: q[optionKey] as string }}
-                          />
-                          {isCorrect && (
-                            <CheckCircle2 className="h-4 w-4 text-green-600 ml-auto shrink-0" />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </Card>
+              <GeneratedQuestionCard key={index} question={q} index={index} />
             ))}
           </div>
         </div>

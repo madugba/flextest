@@ -6,6 +6,8 @@ import {
   type AnswerOption,
   type Question,
 } from '@/entities/question'
+import { validateQuestionForm } from '../selectors/validateQuestionForm'
+import { getResponseErrorMessage } from '../selectors/getResponseErrorMessage'
 import type { QuestionFormData } from '../types'
 
 export interface HandleSubmitDeps {
@@ -42,23 +44,9 @@ export function createHandleSubmit(
   return async (e: FormEvent) => {
     e.preventDefault()
 
-    if (!formData.question.trim()) {
-      toast.error('Please enter the question')
-      return
-    }
-
-    if (
-      !formData.optionA.trim() ||
-      !formData.optionB.trim() ||
-      !formData.optionC.trim() ||
-      !formData.optionD.trim()
-    ) {
-      toast.error('Please fill in all options')
-      return
-    }
-
-    if (!formData.answer) {
-      toast.error('Please select the correct answer')
+    const validationError = validateQuestionForm(formData)
+    if (validationError) {
+      toast.error(validationError)
       return
     }
 
@@ -73,7 +61,7 @@ export function createHandleSubmit(
           optionB: formData.optionB,
           optionC: formData.optionC,
           optionD: formData.optionD,
-          answer: formData.answer,
+          answer: formData.answer as AnswerOption,
           subjectId,
           sessionId,
         })
@@ -100,12 +88,7 @@ export function createHandleSubmit(
         await loadData(true)
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : undefined
-      const responseMessage =
-        typeof err === 'object' && err !== null && 'response' in err
-          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          : undefined
-      const errorMessage = message || responseMessage || 'Failed to save question'
+      const errorMessage = getResponseErrorMessage(err, 'Failed to save question')
       toast.error(errorMessage)
       setError(errorMessage)
       console.error('Question save error:', err)

@@ -1,9 +1,4 @@
-import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import type { Question } from '@/entities/question'
-import type { ExamSession } from '@/entities/exam-session'
-import type { Subject } from '@/entities/subject'
-import type { GeneratedQuestion } from '@/shared/services/ai-generation.service'
 import { useQuestionsDebugLog } from './effects/useQuestionsDebugLog'
 import { useLoadAIModels } from './effects/useLoadAIModels'
 import { useInitialLoad } from './effects/useInitialLoad'
@@ -21,7 +16,11 @@ import { createHandleSubmitGenerated } from './handlers/createHandleSubmitGenera
 import { getRequiredQuestionCount } from './selectors/getRequiredQuestionCount'
 import { getProgressPercentage } from './selectors/getProgressPercentage'
 import { filterQuestionsByQuery } from './selectors/filterQuestionsByQuery'
-import type { AiGenerateFormData, ParsedRow, QuestionFormData } from './types'
+import { useQuestionDataState } from './state/useQuestionDataState'
+import { useQuestionFormState } from './state/useQuestionFormState'
+import { useQuestionSelectionState } from './state/useQuestionSelectionState'
+import { useQuestionImportState } from './state/useQuestionImportState'
+import { useQuestionAiState } from './state/useQuestionAiState'
 
 export function useSubjectUploadPage() {
   const params = useParams()
@@ -29,50 +28,67 @@ export function useSubjectUploadPage() {
   const sessionId = (params?.sessionId as string) || ''
   const subjectId = (params?.subjectId as string) || ''
 
-  const [subject, setSubject] = useState<Subject | null>(null)
-  const [session, setSession] = useState<ExamSession | null>(null)
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    subject,
+    setSubject,
+    session,
+    setSession,
+    questions,
+    setQuestions,
+    isLoading,
+    setIsLoading,
+    isSaving,
+    setIsSaving,
+    error,
+    setError,
+  } = useQuestionDataState()
 
-  const [formData, setFormData] = useState<QuestionFormData>({
-    question: '',
-    optionA: '',
-    optionB: '',
-    optionC: '',
-    optionD: '',
-    answer: '',
-  })
+  const {
+    formData,
+    setFormData,
+    editingQuestion,
+    setEditingQuestion,
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+    questionToDelete,
+    setQuestionToDelete,
+    searchQuery,
+    setSearchQuery,
+    activeTab,
+    setActiveTab,
+    editDialogOpen,
+    setEditDialogOpen,
+  } = useQuestionFormState()
 
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('single')
+  const { selectedIds, setSelectedIds, isBulkDeleting, setIsBulkDeleting, bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen } =
+    useQuestionSelectionState()
 
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
-  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
-  const [importDialogOpen, setImportDialogOpen] = useState(false)
-  const [, setImportFile] = useState<File | null>(null)
-  const [parsedRows, setParsedRows] = useState<ParsedRow[]>([])
-  const [isImporting, setIsImporting] = useState(false)
+  const {
+    importDialogOpen,
+    setImportDialogOpen,
+    setImportFile,
+    parsedRows,
+    setParsedRows,
+    isImporting,
+    setIsImporting,
+  } = useQuestionImportState()
 
-  const [aiGenerateDialogOpen, setAiGenerateDialogOpen] = useState(false)
+  const {
+    aiGenerateDialogOpen,
+    setAiGenerateDialogOpen,
+    aiGenerateFormData,
+    setAiGenerateFormData,
+    isGenerating,
+    setIsGenerating,
+    previewDialogOpen,
+    setPreviewDialogOpen,
+    generatedQuestions,
+    setGeneratedQuestions,
+    isSubmittingGenerated,
+    setIsSubmittingGenerated,
+  } = useQuestionAiState()
+
   const aiModels = useLoadAIModels()
-  const [aiGenerateFormData, setAiGenerateFormData] = useState<AiGenerateFormData>({
-    modelId: '',
-    numQuestions: 5,
-    difficultyLevel: 'medium',
-    extraPrompt: '',
-  })
-  const [isGenerating, setIsGenerating] = useState(false)
-
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
-  const [generatedQuestions, setGeneratedQuestions] = useState<GeneratedQuestion[]>([])
-  const [isSubmittingGenerated, setIsSubmittingGenerated] = useState(false)
 
   useQuestionsDebugLog(questions)
 
