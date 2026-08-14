@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///Users/emanuelchinonsomadugba_fuxam/Documents/Work/Flextest_exam/examiner/src/instrumentation.ts"],"sourcesContent":["// Next.js instrumentation — runs once per worker process at startup.\n//\n// IMPORTANT: this file is compiled for BOTH Node.js and Edge runtimes.\n// Keep it free of any top-level Node.js-only APIs (process.pid, require, etc.).\n// All Node.js-specific logic lives in ./lib/timer-sync, which is only imported\n// when process.env.NEXT_RUNTIME === 'nodejs' — the exact equality form that\n// lets Turbopack/webpack dead-code-eliminate the import from the Edge bundle.\n\nexport async function register(): Promise<void> {\n  if (process.env.NEXT_RUNTIME === 'nodejs') {\n    const { startTimerSync } = await import('./lib/timer-sync')\n    startTimerSync()\n  }\n}\n"],"names":[],"mappings":"AAAA,qEAAqE;AACrE,EAAE;AACF,uEAAuE;AACvE,gFAAgF;AAChF,+EAA+E;AAC/E,4EAA4E;AAC5E,8EAA8E;;;;;AAEvE,eAAe;IACpB,wCAA2C;QACzC,MAAM,EAAE,cAAc,EAAE,GAAG;QAC3B;IACF;AACF","debugId":null}}]
-}
