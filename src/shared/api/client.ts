@@ -48,8 +48,10 @@ export class ApiClient {
             apiResponse.error?.details
           )
         } else if (error.request) {
+          console.error('Network error: Unable to reach server', error.request)
           throw new ApiError('Network error: Unable to reach server', 'NETWORK_ERROR')
         } else {
+          console.error('Unknown error', error)
           throw new ApiError(error.message, 'UNKNOWN_ERROR')
         }
       }
