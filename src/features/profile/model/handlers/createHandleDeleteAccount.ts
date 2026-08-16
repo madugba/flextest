@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { deleteAdmin } from '@/entities/admin'
+import { useDeleteAdminMutation } from '@/entities/admin'
 import type { User } from '@/shared/api/authApi'
 
 interface RouterLike {
@@ -11,7 +11,7 @@ interface CreateHandleDeleteAccountDeps {
   user: User | null
   router: RouterLike
   logout: () => void | Promise<void>
-  setIsLoading: Dispatch<SetStateAction<boolean>>
+  deleteMutation: ReturnType<typeof useDeleteAdminMutation>
   setShowDeleteDialog: Dispatch<SetStateAction<boolean>>
 }
 
@@ -19,16 +19,14 @@ export function createHandleDeleteAccount({
   user,
   router,
   logout,
-  setIsLoading,
+  deleteMutation,
   setShowDeleteDialog,
 }: CreateHandleDeleteAccountDeps) {
   return async () => {
     if (!user?.id) return
 
     try {
-      setIsLoading(true)
-
-      await deleteAdmin(user.id)
+      await deleteMutation.mutateAsync(user.id)
 
       toast.success('Account deleted successfully', {
         description: 'Your account has been permanently deleted.',
@@ -43,8 +41,6 @@ export function createHandleDeleteAccount({
         description: err instanceof Error ? err.message : 'An unexpected error occurred',
       })
       setShowDeleteDialog(false)
-    } finally {
-      setIsLoading(false)
     }
   }
 }

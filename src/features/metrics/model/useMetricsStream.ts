@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getAuthToken } from '@/shared/api/authApi'
-import type { DashboardMetrics, SystemMetrics, BusinessMetrics, ConnectionMetrics, PerformanceMetrics } from '@/entities/metrics/api/metricsApi'
+import type { DashboardMetrics, SystemMetrics, BusinessMetrics, ConnectionMetrics, PerformanceMetrics } from '@/entities/metrics'
+import { queryKeys } from '@/shared/api/queryKeys'
 import { config } from '@/shared/config'
 
 interface StreamConnection {
@@ -31,7 +32,7 @@ export function useMetricsStream() {
       if (Object.keys(updates).length === 0) return
 
       queryClient.setQueryData<DashboardMetrics>(
-        ['metrics', 'dashboard'],
+        queryKeys.metricsSummary,
         (old) => {
           if (!old) return old
           return {
@@ -43,13 +44,6 @@ export function useMetricsStream() {
           }
         }
       )
-
-      if (updates.system) {
-        queryClient.setQueryData(['metrics', 'system'], updates.system)
-      }
-      if (updates.business) {
-        queryClient.setQueryData(['metrics', 'business'], updates.business)
-      }
 
       pendingUpdatesRef.current = {}
     }
@@ -193,13 +187,7 @@ export function useMetricsStream() {
 
               case 'metrics': {
                 const metrics: DashboardMetrics = JSON.parse(data)
-                queryClient.setQueryData(['metrics', 'dashboard'], metrics)
-                if (metrics.system) {
-                  queryClient.setQueryData(['metrics', 'system'], metrics.system)
-                }
-                if (metrics.business) {
-                  queryClient.setQueryData(['metrics', 'business'], metrics.business)
-                }
+                queryClient.setQueryData(queryKeys.metricsSummary, metrics)
                 break
               }
 

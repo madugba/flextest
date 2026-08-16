@@ -23,3 +23,18 @@ export {
   rescheduleExamSession,
   getSessionScores
 } from './api/examSessionApi'
+export {
+  useExamSessionsQuery,
+  useExamSessionQuery,
+  useCompletedExamSessionsQuery,
+  useSessionAnalysisQuery,
+  useSessionStatisticsQuery,
+  useSessionScoresQuery,
+} from './model/queries'
+export {
+  useCreateExamSessionMutation,
+  useUpdateExamSessionMutation,
+  useDeleteExamSessionMutation,
+  useImportExamSessionsMutation,
+  useRescheduleExamSessionMutation,
+} from './model/mutations'

@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { createAdmin, validateCreateAdmin, type CreateAdminRequest } from '@/entities/admin'
+import { useCreateAdminMutation, validateCreateAdmin, type CreateAdminRequest } from '@/entities/admin'
 
 export function useAddAdmin(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<CreateAdminRequest>({
     email: '',
@@ -13,6 +12,9 @@ export function useAddAdmin(onSuccess?: () => void) {
     firstName: '',
     lastName: '',
   })
+
+  const createMutation = useCreateAdminMutation()
+  const isLoading = createMutation.isPending
 
   const handleOpen = () => {
     setIsOpen(true)
@@ -31,25 +33,20 @@ export function useAddAdmin(onSuccess?: () => void) {
   }
 
   const handleSubmit = async () => {
+    setError(null)
+
+    const validationError = validateCreateAdmin(formData)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     try {
-      setError(null)
-
-      const validationError = validateCreateAdmin(formData)
-      if (validationError) {
-        setError(validationError)
-        return
-      }
-
-      setIsLoading(true)
-
-      await createAdmin(formData)
-
+      await createMutation.mutateAsync(formData)
       handleClose()
       onSuccess?.()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create admin')
-    } finally {
-      setIsLoading(false)
     }
   }
 

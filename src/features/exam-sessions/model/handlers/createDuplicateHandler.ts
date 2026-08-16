@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { createExamSession, type ExamSession } from '@/entities/exam-session'
+import { useCreateExamSessionMutation, type ExamSession } from '@/entities/exam-session'
 import type { Subject } from '@/entities/subject'
 import { collectDuplicateQuestions } from '../../lib/collect-duplicate-questions'
 
@@ -8,13 +8,12 @@ interface DuplicateHandlerDeps {
   selectedSession: ExamSession | null
   duplicateName: string
   duplicateSelectedSubjects: string[]
-  setIsSubmitting: Dispatch<SetStateAction<boolean>>
+  createMutation: ReturnType<typeof useCreateExamSessionMutation>
   setShowDuplicateDialog: Dispatch<SetStateAction<boolean>>
   setSelectedSession: Dispatch<SetStateAction<ExamSession | null>>
   setDuplicateName: Dispatch<SetStateAction<string>>
   setDuplicateSelectedSubjects: Dispatch<SetStateAction<string[]>>
   setDuplicateSourceSubjects: Dispatch<SetStateAction<Array<Subject & { questionCount: number }>>>
-  fetchExamSessions: () => Promise<void>
 }
 
 export function createDuplicateHandler(deps: DuplicateHandlerDeps) {
@@ -22,13 +21,12 @@ export function createDuplicateHandler(deps: DuplicateHandlerDeps) {
     selectedSession,
     duplicateName,
     duplicateSelectedSubjects,
-    setIsSubmitting,
+    createMutation,
     setShowDuplicateDialog,
     setSelectedSession,
     setDuplicateName,
     setDuplicateSelectedSubjects,
     setDuplicateSourceSubjects,
-    fetchExamSessions,
   } = deps
 
   return async () => {
@@ -39,10 +37,8 @@ export function createDuplicateHandler(deps: DuplicateHandlerDeps) {
     }
 
     try {
-      setIsSubmitting(true)
-
       // Create the new session with the same settings and new name
-      const newSession = await createExamSession({
+      const newSession = await createMutation.mutateAsync({
         name: duplicateName.trim(),
         date: selectedSession.date,
         time: selectedSession.time,
@@ -73,13 +69,10 @@ export function createDuplicateHandler(deps: DuplicateHandlerDeps) {
       setDuplicateName('')
       setDuplicateSelectedSubjects([])
       setDuplicateSourceSubjects([])
-      await fetchExamSessions()
     } catch (error) {
       toast.error('Failed to duplicate exam session', {
         description: error instanceof Error ? error.message : 'An error occurred',
       })
-    } finally {
-      setIsSubmitting(false)
     }
   }
 }

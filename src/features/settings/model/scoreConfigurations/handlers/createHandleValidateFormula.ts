@@ -1,10 +1,13 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { validateFormula, type ValidateFormulaResponse } from '@/entities/score-configuration'
+import {
+  useValidateFormulaMutation,
+  type ValidateFormulaResponse,
+} from '@/entities/score-configuration'
 
 export function createHandleValidateFormula(
   setValidationResult: Dispatch<SetStateAction<ValidateFormulaResponse | null>>,
-  setIsValidating: Dispatch<SetStateAction<boolean>>,
+  validateMutation: ReturnType<typeof useValidateFormulaMutation>,
   formula: string
 ) {
   return async () => {
@@ -13,10 +16,8 @@ export function createHandleValidateFormula(
       return
     }
 
-    setIsValidating(true)
-
     try {
-      const result = await validateFormula({ formula })
+      const result = await validateMutation.mutateAsync({ formula })
       setValidationResult(result)
 
       if (result.isValid) {
@@ -27,8 +28,6 @@ export function createHandleValidateFormula(
     } catch {
       toast.error('Failed to validate formula')
       setValidationResult({ isValid: false, error: 'Failed to validate formula', placeholders: [] })
-    } finally {
-      setIsValidating(false)
     }
   }
 }

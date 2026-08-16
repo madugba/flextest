@@ -1,20 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Candidate, UpdateCandidateRequest } from '@/entities/candidate'
-import { getAllSubjects, type Subject } from '@/entities/subject'
+import type { UpdateCandidateRequest } from '@/entities/candidate'
+import { useCandidateQuery, useUpdateCandidateMutation } from '@/entities/candidate'
+import { useSubjectsForSessionQuery } from '@/entities/subject'
 import { createHandleClose } from './handlers/createHandleClose'
-import { createHandleOpen } from './handlers/createHandleOpen'
 import { createHandleSubmit } from './handlers/createHandleSubmit'
 import { createHandleToggleSubject } from './handlers/createHandleToggleSubject'
 
 export function useEditCandidate(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [candidate, setCandidate] = useState<Candidate | null>(null)
-  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [candidateId, setCandidateId] = useState<string | null>(null)
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
   const [formData, setFormData] = useState<UpdateCandidateRequest>({
@@ -24,34 +21,43 @@ export function useEditCandidate(onSuccess?: () => void) {
     subjects: [],
   })
 
+  const candidateQuery = useCandidateQuery(candidateId || undefined)
+  const candidate = candidateQuery.data ?? null
+  const isFetching = candidateQuery.isFetching
+
+  const subjectsQuery = useSubjectsForSessionQuery(candidate?.sessionId || undefined)
+  const subjects = subjectsQuery.data ?? []
+
+  const updateMutation = useUpdateCandidateMutation()
+  const isLoading = updateMutation.isPending
+
   useEffect(() => {
-    const loadSubjects = async () => {
-      try {
-        const data = await getAllSubjects()
-        setSubjects(data)
-      } catch (err) {
-        console.error('Failed to load subjects:', err)
-      }
-    }
-    loadSubjects()
-  }, [])
+    if (!isOpen || !candidate) return
+    const currentSubjects = candidate.subjectCombinations?.map(combo => combo.subject.id) || []
+    setSelectedSubjects(currentSubjects)
+    setFormData({
+      email: candidate.email || '',
+      phone: candidate.phone || '',
+      isActive: candidate.isActive,
+      subjects: currentSubjects,
+    })
+  }, [isOpen, candidate])
 
   useEffect(() => {
     setFormData(prev => ({ ...prev, subjects: selectedSubjects }))
   }, [selectedSubjects])
 
-  const handleOpen = createHandleOpen({
-    setIsOpen,
-    setIsFetching,
-    setError,
-    setCandidate,
-    setSelectedSubjects,
-    setFormData,
-  })
+  const handleOpen = (candidateIdToOpen: string) => {
+    setCandidateId(candidateIdToOpen)
+    setIsOpen(true)
+    setError(null)
+    setSelectedSubjects([])
+    setFormData({ email: '', phone: '', isActive: true, subjects: [] })
+  }
 
   const handleClose = createHandleClose({
     setIsOpen,
-    setCandidate,
+    setCandidateId,
     setError,
     setSelectedSubjects,
     setFormData,
@@ -61,8 +67,8 @@ export function useEditCandidate(onSuccess?: () => void) {
     candidate,
     formData,
     selectedSubjects,
+    updateMutation,
     setError,
-    setIsLoading,
     handleClose,
     onSuccess,
   })

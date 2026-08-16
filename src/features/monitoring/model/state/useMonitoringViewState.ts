@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { getSubjectsWithQuestionsBySession } from '@/entities/subject'
+import { useMemo, useState } from 'react'
+import { useSubjectsWithQuestionsQuery } from '@/entities/subject'
 
 interface UseMonitoringViewStateArgs {
   sessionId: string | null
@@ -24,20 +24,14 @@ export function useMonitoringViewState({ sessionId }: UseMonitoringViewStateArgs
   } | null>(null)
   const [showBulkLogoutConfirm, setShowBulkLogoutConfirm] = useState(false)
   const [viewingCandidateId, setViewingCandidateId] = useState<string | null>(null)
-  const [subjectQuestionCounts, setSubjectQuestionCounts] = useState<Map<string, number>>(
-    new Map()
-  )
 
-  useEffect(() => {
-    if (!sessionId) return
-    getSubjectsWithQuestionsBySession(sessionId)
-      .then((subjects) => {
-        setSubjectQuestionCounts(new Map(subjects.map((s) => [s.id, s.questionCount])))
-      })
-      .catch(() => {
-        /* silent — counts will just be omitted */
-      })
-  }, [sessionId])
+  const subjectsQuery = useSubjectsWithQuestionsQuery(sessionId ?? undefined)
+
+  const subjectQuestionCounts = useMemo(
+    () =>
+      new Map((subjectsQuery.data ?? []).map((s) => [s.id, s.questionCount])),
+    [subjectsQuery.data]
+  )
 
   return {
     searchQuery,

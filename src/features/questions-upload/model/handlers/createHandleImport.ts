@@ -1,30 +1,21 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { bulkImportQuestions } from '@/entities/question'
+import { useBulkImportQuestionsMutation } from '@/entities/question'
 import type { ParsedRow, ValidParsedRow } from '../types'
 
 export interface HandleImportDeps {
   parsedRows: ParsedRow[]
   subjectId: string
   sessionId: string
-  setIsImporting: Dispatch<SetStateAction<boolean>>
+  importMutation: ReturnType<typeof useBulkImportQuestionsMutation>
   setImportDialogOpen: Dispatch<SetStateAction<boolean>>
   setImportFile: Dispatch<SetStateAction<File | null>>
   setParsedRows: Dispatch<SetStateAction<ParsedRow[]>>
-  loadData: (bypassCache?: boolean) => Promise<void>
 }
 
 export function createHandleImport(deps: HandleImportDeps): () => Promise<void> {
-  const {
-    parsedRows,
-    subjectId,
-    sessionId,
-    setIsImporting,
-    setImportDialogOpen,
-    setImportFile,
-    setParsedRows,
-    loadData,
-  } = deps
+  const { parsedRows, subjectId, sessionId, importMutation, setImportDialogOpen, setImportFile, setParsedRows } =
+    deps
 
   return async () => {
     const validRows = parsedRows.filter((r): r is ValidParsedRow => r.valid)
@@ -34,9 +25,7 @@ export function createHandleImport(deps: HandleImportDeps): () => Promise<void> 
     }
 
     try {
-      setIsImporting(true)
-
-      const result = await bulkImportQuestions({
+      const result = await importMutation.mutateAsync({
         questions: validRows.map(({ question, optionA, optionB, optionC, optionD, answer }) => ({
           question,
           optionA,
@@ -54,12 +43,9 @@ export function createHandleImport(deps: HandleImportDeps): () => Promise<void> 
       setImportDialogOpen(false)
       setImportFile(null)
       setParsedRows([])
-      await loadData(true)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to import questions'
       toast.error(msg)
-    } finally {
-      setIsImporting(false)
     }
   }
 }

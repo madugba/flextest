@@ -32,11 +32,11 @@ export function useMonitoringSocketHandlers({
     handleCandidateUpdate,
   } = useMemo(
     () => ({
-      handleCandidateLogin: createCandidateLoginHandler({ sessionId, queryClient }),
-      handleCandidateLogout: createCandidateLogoutHandler({ sessionId, queryClient }),
-      handleExamStarted: createExamStartedHandler({ sessionId, queryClient, progressRef }),
-      handleAnswerSubmitted: createAnswerSubmittedHandler({ sessionId, queryClient, progressRef }),
-      handleCandidateUpdate: createCandidateUpdateHandler({ sessionId, queryClient }),
+      handleCandidateLogin: createCandidateLoginHandler({ sessionId, queryClient }), // login candidate handler
+      handleCandidateLogout: createCandidateLogoutHandler({ sessionId, queryClient }), // logout candidate handler
+      handleExamStarted: createExamStartedHandler({ sessionId, queryClient, progressRef }), // start exam handler
+      handleAnswerSubmitted: createAnswerSubmittedHandler({ sessionId, queryClient, progressRef }), // submit answer handler
+      handleCandidateUpdate: createCandidateUpdateHandler({ sessionId, queryClient }), // update candidate status handler
     }),
     [sessionId, queryClient, progressRef]
   )
@@ -49,9 +49,9 @@ export function useMonitoringSocketHandlers({
     }
   }, [sessionId, socket, isConnected])
 
-  useSocketEvent('candidate:login', handleCandidateLogin)
-  useSocketEvent('candidate:logout', handleCandidateLogout)
-  useSocketEvent('exam:started', handleExamStarted)
-  useSocketEvent('exam:answerSubmitted', handleAnswerSubmitted)
-  useSocketEvent('candidate:update', handleCandidateUpdate)
+  useSocketEvent('candidate:login', handleCandidateLogin) // candidate login event handler
+  useSocketEvent('candidate:logout', handleCandidateLogout) // candidate logout event handler
+  useSocketEvent('exam:started', handleExamStarted) // exam started event handler
+  useSocketEvent('exam:answerSubmitted', handleAnswerSubmitted) // answer submitted event handler
+  useSocketEvent('candidate:update', handleCandidateUpdate) // candidate update event handler
 }

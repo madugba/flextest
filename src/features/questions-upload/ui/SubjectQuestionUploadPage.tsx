@@ -92,7 +92,7 @@ export function SubjectQuestionUploadPage() {
           onBack={() => router.push(`/questions/upload/${sessionId}`)}
           onImport={() => setImportDialogOpen(true)}
           onGenerate={() => setAiGenerateDialogOpen(true)}
-          onRefresh={() => loadData(true)}
+          onRefresh={() => void loadData()}
         />
 
         <UploadProgressCard

@@ -1,37 +1,20 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
-import { getDashboardMetrics, getSystemMetrics, getBusinessMetrics } from '@/entities/metrics/api/metricsApi'
-import type { DashboardMetrics, SystemMetrics, BusinessMetrics } from '@/entities/metrics/api/metricsApi'
+import { useDashboardMetricsQuery } from '@/entities/metrics'
+import type { SystemMetrics, BusinessMetrics } from '@/entities/metrics'
 
 export function useDashboardMetrics() {
-  const cacheDurationMs = 10 * 60 * 1000
-  return useQuery<DashboardMetrics>({
-    queryKey: ['metrics', 'dashboard'],
-    queryFn: getDashboardMetrics,
-    staleTime: Infinity,
-    gcTime: cacheDurationMs,
-  })
+  return useDashboardMetricsQuery()
 }
 
-export function useSystemMetrics() {
-  const cacheDurationMs = 10 * 60 * 1000
-  return useQuery<SystemMetrics>({
-    queryKey: ['metrics', 'system'],
-    queryFn: getSystemMetrics,
-    staleTime: Infinity,
-    gcTime: cacheDurationMs,
-  })
+export function useSystemMetrics(): SystemMetrics | undefined {
+  const { data } = useDashboardMetricsQuery()
+  return data?.system
 }
 
-export function useBusinessMetrics() {
-  const cacheDurationMs = 10 * 60 * 1000
-  return useQuery<BusinessMetrics>({
-    queryKey: ['metrics', 'business'],
-    queryFn: getBusinessMetrics,
-    staleTime: Infinity,
-    gcTime: cacheDurationMs,
-  })
+export function useBusinessMetrics(): BusinessMetrics | undefined {
+  const { data } = useDashboardMetricsQuery()
+  return data?.business
 }
 
 /**
@@ -40,7 +23,7 @@ export function useBusinessMetrics() {
  */
 
 export function useServerStatus() {
-  const { data } = useDashboardMetrics()
+  const { data } = useDashboardMetricsQuery()
   return {
     status: data?.system?.server?.status || 'unknown',
     uptime: data?.system?.server?.uptime || 0,
@@ -49,22 +32,22 @@ export function useServerStatus() {
 }
 
 export function useCPUMetrics() {
-  const { data } = useDashboardMetrics()
+  const { data } = useDashboardMetricsQuery()
   return data?.system?.cpu
 }
 
 export function useMemoryMetrics() {
-  const { data } = useDashboardMetrics()
+  const { data } = useDashboardMetricsQuery()
   return data?.system?.memory
 }
 
 export function useConnectionMetrics() {
-  const { data } = useDashboardMetrics()
+  const { data } = useDashboardMetricsQuery()
   return data?.connections
 }
 
 export function usePerformanceMetrics() {
-  const { data } = useDashboardMetrics()
+  const { data } = useDashboardMetricsQuery()
   return data?.performance
 }
 
@@ -72,7 +55,7 @@ export function usePerformanceMetrics() {
  * Hook for last update timestamp
  */
 export function useLastUpdate() {
-  const { dataUpdatedAt } = useDashboardMetrics()
+  const { dataUpdatedAt } = useDashboardMetricsQuery()
   return dataUpdatedAt ? new Date(dataUpdatedAt) : null
 }
 
@@ -80,7 +63,7 @@ export function useLastUpdate() {
  * Hook for connection status
  */
 export function useMetricsConnection() {
-  const { isError, isLoading, isFetching } = useDashboardMetrics()
+  const { isError, isLoading, isFetching } = useDashboardMetricsQuery()
   return {
     connected: !isError && !isLoading,
     loading: isLoading,

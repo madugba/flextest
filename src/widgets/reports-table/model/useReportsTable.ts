@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useQueries } from '@tanstack/react-query'
 import {
-  getCompletedExamSessions,
+  useCompletedExamSessionsQuery,
   getSessionAnalysis,
+  getSessionStatistics,
   type ExamSession,
-  type SessionStatistics
+  type SessionStatistics,
 } from '@/entities/exam-session'
-import { toast } from 'sonner'
+import { queryKeys } from '@/shared/api/queryKeys'
 
 export interface SessionWithStats extends ExamSession {
   statistics?: SessionStatistics
@@ -23,78 +25,84 @@ interface UseReportsTableProps {
 export function useReportsTable(props?: UseReportsTableProps) {
   const { refreshTrigger = 0 } = props || {}
 
-  const [sessions, setSessions] = useState<SessionWithStats[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortField>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
-  const fetchSessions = async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  const sessionsQuery = useCompletedExamSessionsQuery()
+  const sessions = useMemo(() => sessionsQuery.data ?? [], [sessionsQuery.data])
 
-      const data = await getCompletedExamSessions()
+  const statsQueries = useQueries({
+    queries: sessions.map((session) => ({
+      queryKey: queryKeys.sessionStatistics(session.id),
+      queryFn: () => getSessionStatistics(session.id),
+    })),
+  })
 
-      // For each session, fetch candidate counts (local DB route) and pass-rate
-      // (backend analysis) in parallel. Each resolves independently so a failure
-      // in one doesn't blank out the other.
-      const withStats = await Promise.all(
-        data.map(async (session) => {
-          const [statsResult, analysisResult] = await Promise.allSettled([
-            fetch(`/api/sessions/${session.id}/stats`).then(async (r) => {
-              if (!r.ok) throw new Error(`stats HTTP ${r.status}`)
-              return r.json() as Promise<{ scheduled: number; submitted: number; absent: number; active: number }>
-            }),
-            getSessionAnalysis(session.id),
-          ])
+  const analysisQueries = useQueries({
+    queries: sessions.map((session) => ({
+      queryKey: queryKeys.sessionAnalysis(session.id),
+      queryFn: () => getSessionAnalysis(session.id),
+    })),
+  })
 
-          if (statsResult.status === 'rejected') {
-            console.error(`[reports] stats failed for ${session.id}:`, statsResult.reason)
-          }
-          if (analysisResult.status === 'rejected') {
-            console.error(`[reports] analysis failed for ${session.id}:`, analysisResult.reason)
-          }
+  const sessionsWithStats: SessionWithStats[] = useMemo(() => {
+    return sessions.map((session, index) => {
+      const statsQuery = statsQueries[index]
+      const analysisQuery = analysisQueries[index]
 
-          const localStats = statsResult.status === 'fulfilled' ? statsResult.value : null
-          const analysis   = analysisResult.status === 'fulfilled' ? analysisResult.value : null
+      const statistics: SessionStatistics = {
+        scheduled: statsQuery?.data?.scheduled ?? 0,
+        absent: statsQuery?.data?.absent ?? 0,
+        submitted: statsQuery?.data?.submitted ?? 0,
+        passPercentage: analysisQuery?.data?.passingTrend?.passPercentage,
+        passCount: analysisQuery?.data?.passingTrend?.pass,
+        failCount: analysisQuery?.data?.passingTrend?.fail,
+      }
 
-          const statistics: SessionStatistics = {
-            scheduled:      localStats?.scheduled ?? 0,
-            absent:         localStats?.absent    ?? 0,
-            submitted:      localStats?.submitted  ?? 0,
-            passPercentage: analysis?.passingTrend?.passPercentage,
-            passCount:      analysis?.passingTrend?.pass,
-            failCount:      analysis?.passingTrend?.fail,
-          }
+      return { ...session, statistics }
+    })
+  }, [sessions, statsQueries, analysisQueries])
 
-          return { ...session, statistics }
-        })
-      )
+  const loading =
+    sessionsQuery.isLoading ||
+    statsQueries.some((q) => q.isLoading) ||
+    analysisQueries.some((q) => q.isLoading)
 
-      setSessions(withStats)
-    } catch (err) {
-      console.error('Error fetching completed sessions:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load reports'
-      setError(errorMessage)
-      toast.error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const error = sessionsQuery.error?.message ?? null
 
   useEffect(() => {
-    fetchSessions()
-  }, [refreshTrigger])
+    statsQueries.forEach((query, index) => {
+      if (query.isError) {
+        console.error(`[reports] stats failed for ${sessions[index]?.id}:`, query.error)
+      }
+    })
+    analysisQueries.forEach((query, index) => {
+      if (query.isError) {
+        console.error(`[reports] analysis failed for ${sessions[index]?.id}:`, query.error)
+      }
+    })
+  }, [sessions, statsQueries, analysisQueries])
 
-  // Filter and sort sessions
+  const refetch = useCallback(async () => {
+    await Promise.all([
+      sessionsQuery.refetch(),
+      ...statsQueries.map((query) => query.refetch()),
+      ...analysisQueries.map((query) => query.refetch()),
+    ])
+  }, [sessionsQuery, statsQueries, analysisQueries])
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      void refetch()
+    }
+  }, [refreshTrigger, refetch])
+
   const filteredSessions = useMemo(() => {
-    let filtered = sessions.filter((session) =>
+    let filtered = sessionsWithStats.filter((session) =>
       session.name.toLowerCase().includes(search.toLowerCase())
     )
 
-    // Sort
     filtered = filtered.sort((a, b) => {
       let comparison = 0
 
@@ -119,7 +127,7 @@ export function useReportsTable(props?: UseReportsTableProps) {
     })
 
     return filtered
-  }, [sessions, search, sortBy, sortOrder])
+  }, [sessionsWithStats, search, sortBy, sortOrder])
 
   return {
     sessions: filteredSessions,
@@ -131,6 +139,6 @@ export function useReportsTable(props?: UseReportsTableProps) {
     setSortBy,
     sortOrder,
     setSortOrder,
-    refetch: fetchSessions,
+    refetch,
   }
 }

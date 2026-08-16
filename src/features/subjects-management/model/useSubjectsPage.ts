@@ -1,29 +1,46 @@
 'use client'
 
+import {
+  useCreateSubjectMutation,
+  useDeleteSubjectMutation,
+  useSubjectsQuery,
+  useUpdateSubjectMutation,
+} from '@/entities/subject'
 import { useSubjectsPageActions } from './useSubjectsPageActions'
 import { useSubjectsPageDialogActions } from './useSubjectsPageDialogActions'
 import { useDialogState } from './state/useDialogState'
 import { useSearchState } from './state/useSearchState'
 import { useSubjectFormState } from './state/useSubjectFormState'
-import { useSubjectsListState } from './state/useSubjectsListState'
 
 export function useSubjectsPage() {
-  const listState = useSubjectsListState()
   const searchState = useSearchState()
   const dialogState = useDialogState()
   const formState = useSubjectFormState()
 
+  const subjectsQuery = useSubjectsQuery(searchState.search)
+  const createMutation = useCreateSubjectMutation()
+  const updateMutation = useUpdateSubjectMutation()
+  const deleteMutation = useDeleteSubjectMutation()
+
+  const subjects = subjectsQuery.data ?? []
+  const loading = subjectsQuery.isLoading
+
   const { handleCreate, handleEdit, handleDelete } = useSubjectsPageActions(
-    listState,
     searchState,
     dialogState,
-    formState
+    formState,
+    createMutation,
+    updateMutation,
+    deleteMutation
   )
   const { openEditDialog, openDeleteDialog } = useSubjectsPageDialogActions(dialogState, formState)
 
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
+
   return {
-    subjects: listState.subjects,
-    loading: listState.loading,
+    subjects,
+    loading,
     search: searchState.search,
     setSearch: searchState.setSearch,
     showCreateDialog: dialogState.showCreateDialog,
@@ -37,7 +54,7 @@ export function useSubjectsPage() {
     selectedSubject: formState.selectedSubject,
     subjectName: formState.subjectName,
     setSubjectName: formState.setSubjectName,
-    isSubmitting: formState.isSubmitting,
+    isSubmitting,
     handleCreate,
     handleEdit,
     handleDelete,

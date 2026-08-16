@@ -1,18 +1,17 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { createExamSession } from '@/entities/exam-session'
+import { useCreateExamSessionMutation } from '@/entities/exam-session'
 import type { ExamSessionFormData } from '../types'
 
 interface CreateHandlerDeps {
   formData: ExamSessionFormData
-  setIsSubmitting: Dispatch<SetStateAction<boolean>>
+  createMutation: ReturnType<typeof useCreateExamSessionMutation>
   setShowCreateDialog: Dispatch<SetStateAction<boolean>>
   resetForm: () => void
-  fetchExamSessions: () => Promise<void>
 }
 
 export function createCreateHandler(deps: CreateHandlerDeps) {
-  const { formData, setIsSubmitting, setShowCreateDialog, resetForm, fetchExamSessions } = deps
+  const { formData, createMutation, setShowCreateDialog, resetForm } = deps
 
   return async () => {
     if (!formData.name.trim() || !formData.date || !formData.time || !formData.centerId) {
@@ -31,8 +30,7 @@ export function createCreateHandler(deps: CreateHandlerDeps) {
     }
 
     try {
-      setIsSubmitting(true)
-      await createExamSession({
+      await createMutation.mutateAsync({
         name: formData.name.trim(),
         date: new Date(formData.date).toISOString(),
         time: formData.time,
@@ -48,13 +46,10 @@ export function createCreateHandler(deps: CreateHandlerDeps) {
       toast.success('Exam session created successfully')
       setShowCreateDialog(false)
       resetForm()
-      await fetchExamSessions()
     } catch (error) {
       toast.error('Failed to create exam session', {
         description: error instanceof Error ? error.message : 'An error occurred',
       })
-    } finally {
-      setIsSubmitting(false)
     }
   }
 }

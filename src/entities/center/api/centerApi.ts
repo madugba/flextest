@@ -124,3 +124,31 @@ export async function updateCenter(id: string, data: UpdateCenterRequest): Promi
     )
   }
 }
+
+/**
+ * Delete a center
+ * @param id Center ID
+ * @throws ApiError on server error
+ */
+export async function deleteCenter(id: string): Promise<void> {
+  try {
+    const response = await apiClient.delete(`/centers/${id}`)
+
+    if (!response.success) {
+      throw new ApiError(
+        response.error?.message || 'Failed to delete center',
+        response.error?.code || 'DELETE_FAILED',
+        undefined,
+        response.error?.details
+      )
+    }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Unknown error occurred',
+      'UNKNOWN_ERROR'
+    )
+  }
+}

@@ -1,9 +1,9 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
 import {
-  createAIModel,
-  updateAIModel,
   type AIModelProvider,
+  useCreateAIModelMutation,
+  useUpdateAIModelMutation,
   type CreateAIModelRequest,
   type UpdateAIModelRequest,
 } from '@/entities/ai-model'
@@ -17,7 +17,8 @@ interface CreateHandleSaveDeps {
   setIsCreating: Dispatch<SetStateAction<boolean>>
   setEditingId: Dispatch<SetStateAction<string | null>>
   setFormData: Dispatch<SetStateAction<AIModelFormData>>
-  reload: () => void
+  createMutation: ReturnType<typeof useCreateAIModelMutation>
+  updateMutation: ReturnType<typeof useUpdateAIModelMutation>
 }
 
 export function createHandleSave({
@@ -27,7 +28,8 @@ export function createHandleSave({
   setIsCreating,
   setEditingId,
   setFormData,
-  reload,
+  createMutation,
+  updateMutation,
 }: CreateHandleSaveDeps) {
   return async () => {
     try {
@@ -45,7 +47,7 @@ export function createHandleSave({
           isActive: formData.isActive,
           centerId: formData.centerId,
         }
-        await createAIModel(newModel)
+        await createMutation.mutateAsync(newModel)
         toast.success('AI model added successfully')
       } else if (editingId) {
         const updateData: UpdateAIModelRequest = {
@@ -56,14 +58,13 @@ export function createHandleSave({
           isActive: formData.isActive,
           centerId: formData.centerId,
         }
-        await updateAIModel(editingId, updateData)
+        await updateMutation.mutateAsync({ id: editingId, data: updateData })
         toast.success('AI model updated successfully')
       }
 
       setIsCreating(false)
       setEditingId(null)
       setFormData({ ...EMPTY_AI_MODEL_FORM })
-      await reload()
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error(error.message)

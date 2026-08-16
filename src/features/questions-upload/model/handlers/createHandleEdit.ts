@@ -5,12 +5,11 @@ import type { QuestionFormData } from '../types'
 export interface HandleEditDeps {
   setEditingQuestion: Dispatch<SetStateAction<Question | null>>
   setFormData: Dispatch<SetStateAction<QuestionFormData>>
-  setError: Dispatch<SetStateAction<string | null>>
   setEditDialogOpen: Dispatch<SetStateAction<boolean>>
 }
 
 export function createHandleEdit(deps: HandleEditDeps): (question: Question) => void {
-  const { setEditingQuestion, setFormData, setError, setEditDialogOpen } = deps
+  const { setEditingQuestion, setFormData, setEditDialogOpen } = deps
 
   return (question: Question) => {
     setEditingQuestion(question)
@@ -22,7 +21,6 @@ export function createHandleEdit(deps: HandleEditDeps): (question: Question) => 
       optionD: question.optionD,
       answer: question.answer,
     })
-    setError(null)
     setEditDialogOpen(true)
   }
 }

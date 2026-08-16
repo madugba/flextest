@@ -1,14 +1,14 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
 import {
-  previewScore,
+  usePreviewScoreMutation,
   type PreviewScoreResponse,
   type ValidateFormulaResponse,
 } from '@/entities/score-configuration'
 
 export function createHandlePreviewScore(
   setPreviewResult: Dispatch<SetStateAction<PreviewScoreResponse | null>>,
-  setIsPreviewing: Dispatch<SetStateAction<boolean>>,
+  previewMutation: ReturnType<typeof usePreviewScoreMutation>,
   formula: string,
   validationResult: ValidateFormulaResponse | null
 ) {
@@ -23,8 +23,6 @@ export function createHandlePreviewScore(
       return
     }
 
-    setIsPreviewing(true)
-
     try {
       const sampleValues = validationResult.sampleValues || {
         correctAnswers: 8,
@@ -33,7 +31,7 @@ export function createHandlePreviewScore(
         skippedQuestions: 0,
       }
 
-      const result = await previewScore({
+      const result = await previewMutation.mutateAsync({
         formula,
         values: sampleValues,
       })
@@ -41,8 +39,6 @@ export function createHandlePreviewScore(
       setPreviewResult(result)
     } catch {
       toast.error('Failed to preview score calculation')
-    } finally {
-      setIsPreviewing(false)
     }
   }
 }

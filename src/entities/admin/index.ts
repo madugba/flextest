@@ -19,6 +19,19 @@ export {
 } from './api/adminApi'
 
 export {
+  useAdminsQuery,
+} from './model/queries'
+
+export {
+  useCreateAdminMutation,
+  useUpdateAdminMutation,
+  useUpdateAdminPasswordMutation,
+  useDeleteAdminMutation,
+  useBlockAdminMutation,
+  useUnblockAdminMutation,
+} from './model/mutations'
+
+export {
   validateCreateAdmin,
   validatePasswordChange,
   getAdminFullName,

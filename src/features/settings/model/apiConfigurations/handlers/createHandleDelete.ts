@@ -1,17 +1,18 @@
 import { toast } from 'sonner'
-import { deleteAPIConfiguration } from '@/entities/api-configuration'
+import { useDeleteAPIConfigurationMutation } from '@/entities/api-configuration'
 import { getApiErrorMessage } from '../../shared/selectors/getApiErrorMessage'
 
-export function createHandleDelete(reload: () => void) {
+export function createHandleDelete(
+  deleteMutation: ReturnType<typeof useDeleteAPIConfigurationMutation>
+) {
   return async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) {
       return
     }
 
     try {
-      await deleteAPIConfiguration(id)
+      await deleteMutation.mutateAsync(id)
       toast.success('API configuration deleted successfully')
-      await reload()
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error) ?? 'Failed to delete API configuration')
     }

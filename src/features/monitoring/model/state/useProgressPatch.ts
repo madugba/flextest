@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { SessionMonitoringDetails } from '@/entities/monitoring'
+import { queryKeys } from '@/shared/api/queryKeys'
 import type { CandidateProgressRef } from './CandidateProgressRef'
 
 interface UseProgressPatchArgs {
@@ -25,7 +26,7 @@ export function useProgressPatch({
   const patchProgressFromRef = useCallback(() => {
     if (!sessionId || progressRef.current.size === 0) return
     queryClient.setQueryData<SessionMonitoringDetails>(
-      ['monitoring', 'session', sessionId, 'details'],
+      queryKeys.monitoringSession(sessionId),
       (oldData) => {
         if (!oldData) return oldData
         return {

@@ -43,7 +43,7 @@ export function DashboardPage() {
       />
 
       <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
           <DashboardGreeting firstName={user.firstName} />
           <SystemHealthSection system={metrics?.system} connections={metrics?.connections} />
           <BusinessMetricsSection business={metrics?.business} />

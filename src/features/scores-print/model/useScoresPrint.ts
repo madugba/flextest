@@ -1,56 +1,31 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { getSessionScores, getExamSessionById, type SessionScores, type ExamSession } from '@/entities/exam-session'
+import { useCallback } from 'react'
+import { useExamSessionQuery, useSessionScoresQuery } from '@/entities/exam-session'
 
-/**
- * Hook for fetching session and scores data for PDF generation
- * Combines session details and scores data
- */
 export function useScoresPrint(sessionId: string | null) {
-  const [session, setSession] = useState<ExamSession | null>(null)
-  const [scores, setScores] = useState<SessionScores | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const sessionQuery = useExamSessionQuery(sessionId ?? undefined)
+  const scoresQuery = useSessionScoresQuery(sessionId ?? undefined)
 
-  const fetchData = useCallback(async () => {
-    if (!sessionId) return
+  const session = sessionQuery.data ?? null
+  const scores = scoresQuery.data ?? null
 
-    setLoading(true)
-    setError(null)
+  const loading = sessionQuery.isLoading || scoresQuery.isLoading
 
-    try {
-      const [sessionData, scoresData] = await Promise.all([
-        getExamSessionById(sessionId),
-        getSessionScores(sessionId),
-      ])
+  const error =
+    sessionQuery.error?.message ??
+    scoresQuery.error?.message ??
+    null
 
-      setSession(sessionData)
-      setScores(scoresData)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch scores data'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }, [sessionId])
-
-  useEffect(() => {
-    if (sessionId) {
-      fetchData()
-    } else {
-      setSession(null)
-      setScores(null)
-      setError(null)
-    }
-  }, [sessionId, fetchData])
+  const refetch = useCallback(async () => {
+    await Promise.all([sessionQuery.refetch(), scoresQuery.refetch()])
+  }, [sessionQuery, scoresQuery])
 
   return {
     session,
     scores,
     loading,
     error,
-    refetch: fetchData,
+    refetch,
   }
 }
-

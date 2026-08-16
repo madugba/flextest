@@ -1,18 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import type { CreateCandidateRequest } from '@/entities/candidate'
-import type { ExamSession } from '@/entities/exam-session'
-import type { Subject } from '@/entities/subject'
+import { useEffect, useState } from 'react'
+import { useCreateCandidateMutation, type CreateCandidateRequest } from '@/entities/candidate'
+import { useExamSessionsQuery } from '@/entities/exam-session'
+import { useSubjectsForSessionQuery } from '@/entities/subject'
 import { createHandleSubmit } from './handlers/createHandleSubmit'
-import { createLoadData } from './handlers/createLoadData'
 import { createToggleSubject } from './handlers/createToggleSubject'
+import { getActiveSessions } from './selectors/getActiveSessions'
 
 export function useAddCandidateForm(onSuccess?: () => void) {
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sessions, setSessions] = useState<ExamSession[]>([])
-  const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
   const [formData, setFormData] = useState<CreateCandidateRequest>({
@@ -26,14 +23,15 @@ export function useAddCandidateForm(onSuccess?: () => void) {
     subjects: [],
   })
 
-  const loadData = useCallback(
-    () => createLoadData({ setSessions, setSubjects })(),
-    [setSessions, setSubjects]
-  )
+  const sessionsQuery = useExamSessionsQuery()
+  const subjectsQuery = useSubjectsForSessionQuery(formData.sessionId || undefined)
+  const createMutation = useCreateCandidateMutation()
 
-  useEffect(() => {
-    void loadData()
-  }, [loadData])
+  const sessions = getActiveSessions(sessionsQuery.data ?? [])
+  const subjects = subjectsQuery.data ?? []
+
+  const isLoading =
+    sessionsQuery.isLoading || subjectsQuery.isLoading || createMutation.isPending
 
   useEffect(() => {
     setFormData(prev => ({ ...prev, subjects: selectedSubjects }))
@@ -44,8 +42,8 @@ export function useAddCandidateForm(onSuccess?: () => void) {
   const handleSubmit = createHandleSubmit({
     formData,
     selectedSubjects,
+    createMutation,
     setError,
-    setIsLoading,
     onSuccess,
   })
 

@@ -1,4 +1,3 @@
-import { importCandidates } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'
 import { toast } from 'sonner'
 import type { CandidateImportState } from '../useCandidateImportState'
@@ -8,10 +7,9 @@ export function createImportFromJson(
   onSuccess?: (count: number) => void
 ) {
   return async () => {
-    const { jsonData, setError, setIsLoading, handleClose } = state
+    const { jsonData, setError, handleClose, importMutation } = state
     try {
       setError(null)
-      setIsLoading(true)
       let candidates
       try {
         candidates = JSON.parse(jsonData)
@@ -20,7 +18,7 @@ export function createImportFromJson(
       }
       if (!Array.isArray(candidates)) throw new Error('JSON must be an array of candidates')
       toast.loading(`Importing ${candidates.length} candidate(s)...`, { id: 'import-loading' })
-      const result = await importCandidates({ candidates })
+      const result = await importMutation.mutateAsync({ candidates })
       toast.dismiss('import-loading')
       handleClose()
       if (result.failed > 0) {
@@ -38,8 +36,6 @@ export function createImportFromJson(
       toast.dismiss('import-loading')
       setError(msg)
       toast.error('Import failed', { description: msg })
-    } finally {
-      setIsLoading(false)
     }
   }
 }

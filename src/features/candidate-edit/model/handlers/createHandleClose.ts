@@ -1,9 +1,9 @@
 import type { Dispatch, SetStateAction } from 'react'
-import type { Candidate, UpdateCandidateRequest } from '@/entities/candidate'
+import type { UpdateCandidateRequest } from '@/entities/candidate'
 
 interface CreateHandleCloseDeps {
   setIsOpen: Dispatch<SetStateAction<boolean>>
-  setCandidate: Dispatch<SetStateAction<Candidate | null>>
+  setCandidateId: Dispatch<SetStateAction<string | null>>
   setError: Dispatch<SetStateAction<string | null>>
   setSelectedSubjects: Dispatch<SetStateAction<string[]>>
   setFormData: Dispatch<SetStateAction<UpdateCandidateRequest>>
@@ -11,14 +11,14 @@ interface CreateHandleCloseDeps {
 
 export function createHandleClose({
   setIsOpen,
-  setCandidate,
+  setCandidateId,
   setError,
   setSelectedSubjects,
   setFormData,
 }: CreateHandleCloseDeps) {
   return () => {
     setIsOpen(false)
-    setCandidate(null)
+    setCandidateId(null)
     setError(null)
     setSelectedSubjects([])
     setFormData({

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { bulkLogoutCandidates } from '@/entities/candidate/api/candidateApi'
+import { queryKeys } from '@/shared/api/queryKeys'
 import { toast } from 'sonner'
 
 export function useBulkLogoutCandidates(sessionId?: string) {
@@ -29,10 +30,10 @@ export function useBulkLogoutCandidates(sessionId?: string) {
 
       if (sessionId) {
         queryClient.invalidateQueries({
-          queryKey: ['monitoring', 'session', sessionId, 'statistics'],
+          queryKey: queryKeys.monitoringStatistics(sessionId),
         })
         queryClient.invalidateQueries({
-          queryKey: ['monitoring', 'session', sessionId, 'details'],
+          queryKey: queryKeys.monitoringSession(sessionId),
         })
       }
     },

@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
 import {
-  createAPIConfiguration,
-  updateAPIConfiguration,
+  useCreateAPIConfigurationMutation,
+  useUpdateAPIConfigurationMutation,
   type CreateAPIConfigurationRequest,
   type UpdateAPIConfigurationRequest,
 } from '@/entities/api-configuration'
@@ -16,7 +16,8 @@ interface CreateHandleSaveDeps {
   setIsCreating: Dispatch<SetStateAction<boolean>>
   setEditingId: Dispatch<SetStateAction<string | null>>
   setFormData: Dispatch<SetStateAction<APIConfigurationFormData>>
-  reload: () => void
+  createMutation: ReturnType<typeof useCreateAPIConfigurationMutation>
+  updateMutation: ReturnType<typeof useUpdateAPIConfigurationMutation>
 }
 
 export function createHandleSave({
@@ -26,7 +27,8 @@ export function createHandleSave({
   setIsCreating,
   setEditingId,
   setFormData,
-  reload,
+  createMutation,
+  updateMutation,
 }: CreateHandleSaveDeps) {
   return async () => {
     try {
@@ -44,7 +46,7 @@ export function createHandleSave({
           centerId: formData.centerId,
           isSchoolPortal: formData.isSchoolPortal,
         }
-        await createAPIConfiguration(newConfig)
+        await createMutation.mutateAsync(newConfig)
         toast.success('API configuration created successfully')
       } else if (editingId) {
         const updateData: UpdateAPIConfigurationRequest = {
@@ -55,14 +57,13 @@ export function createHandleSave({
           centerId: formData.centerId,
           isSchoolPortal: formData.isSchoolPortal,
         }
-        await updateAPIConfiguration(editingId, updateData)
+        await updateMutation.mutateAsync({ id: editingId, data: updateData })
         toast.success('API configuration updated successfully')
       }
 
       setIsCreating(false)
       setEditingId(null)
       setFormData({ ...EMPTY_API_CONFIGURATION_FORM })
-      await reload()
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error) ?? 'Failed to save API configuration')
     }

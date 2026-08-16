@@ -1,26 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { getAllAPIConfigurations } from '@/entities/api-configuration'
-import type { APIConfiguration } from './types'
+import { useCallback } from 'react'
+import { useAPIConfigurationsQuery } from '@/entities/api-configuration'
 
 /** Loads the saved API configurations used to pick a cohort-fetch / score-push endpoint. */
 export function useApiConfigurations(enabled: boolean) {
-  const [configurations, setConfigurations] = useState<APIConfiguration[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const query = useAPIConfigurationsQuery()
 
-  const load = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      setConfigurations(await getAllAPIConfigurations())
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  const reload = useCallback(() => {
+    void query.refetch()
+  }, [query])
 
-  useEffect(() => {
-    if (enabled) load()
-  }, [enabled, load])
-
-  return { configurations, isLoading, reload: load }
+  return {
+    configurations: enabled ? (query.data ?? []) : [],
+    isLoading: query.isLoading,
+    reload,
+  }
 }

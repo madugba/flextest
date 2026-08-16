@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/shared/hooks/useAuth'
+import { useDeleteAdminMutation, useUpdateAdminMutation } from '@/entities/admin'
 import { createHandleCancel } from './handlers/createHandleCancel'
 import { createHandleDeleteAccount } from './handlers/createHandleDeleteAccount'
 import { createHandleEdit } from './handlers/createHandleEdit'
@@ -13,10 +14,14 @@ export function useProfilePage(): ProfilePageController {
   const router = useRouter()
   const { user, logout, updateUser } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [firstName, setFirstName] = useState(user?.firstName || '')
   const [lastName, setLastName] = useState(user?.lastName || '')
+
+  const updateMutation = useUpdateAdminMutation()
+  const deleteMutation = useDeleteAdminMutation()
+
+  const isLoading = updateMutation.isPending || deleteMutation.isPending
 
   const handleEdit = useCallback(
     () => createHandleEdit(setIsEditing, setFirstName, setLastName, user)(),
@@ -32,10 +37,10 @@ export function useProfilePage(): ProfilePageController {
         firstName,
         lastName,
         updateUser,
-        setIsLoading,
+        updateMutation,
         setIsEditing,
       })(),
-    [user, firstName, lastName, updateUser, setIsLoading, setIsEditing]
+    [user, firstName, lastName, updateUser, updateMutation, setIsEditing]
   )
 
   const handleDeleteAccount = useCallback(
@@ -44,10 +49,10 @@ export function useProfilePage(): ProfilePageController {
         user,
         router,
         logout,
-        setIsLoading,
+        deleteMutation,
         setShowDeleteDialog,
       })(),
-    [user, router, logout, setIsLoading, setShowDeleteDialog]
+    [user, router, logout, deleteMutation, setShowDeleteDialog]
   )
 
   return {

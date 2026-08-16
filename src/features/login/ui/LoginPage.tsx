@@ -1,11 +1,13 @@
 'use client'
 
 import Image from 'next/image'
+import { Spinner } from '@/shared/ui/Spinner'
 import { useLoginPage } from '../model/useLoginPage'
 import { LoginForm } from './LoginForm'
 
 export function LoginPage() {
   const {
+    isCheckingCenter,
     formData,
     setFormData,
     showPassword,
@@ -14,6 +16,14 @@ export function LoginPage() {
     error,
     handleSubmit,
   } = useLoginPage()
+
+  if (isCheckingCenter) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Spinner className="size-8 text-blue-600" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">

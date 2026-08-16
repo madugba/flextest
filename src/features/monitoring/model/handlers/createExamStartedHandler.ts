@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { SessionMonitoringDetails } from '@/entities/monitoring'
 import type { ExamStartedEvent } from '@/shared/lib/socket'
+import { queryKeys } from '@/shared/api/queryKeys'
 import type { CandidateProgressRef } from '../state/CandidateProgressRef'
 
 export function createExamStartedHandler({
@@ -23,7 +24,7 @@ export function createExamStartedHandler({
     })
 
     queryClient.setQueryData<SessionMonitoringDetails>(
-      ['monitoring', 'session', sessionId, 'details'],
+      queryKeys.monitoringSession(sessionId),
       (oldData) => {
         if (!oldData) {
           return oldData

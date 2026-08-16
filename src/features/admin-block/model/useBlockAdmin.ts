@@ -1,30 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import { blockAdmin, unblockAdmin, type Admin } from '@/entities/admin'
+import { useBlockAdminMutation, useUnblockAdminMutation, type Admin } from '@/entities/admin'
 
 export function useBlockAdmin(onSuccess?: (wasBlocked: boolean) => void) {
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const blockMutation = useBlockAdminMutation()
+  const unblockMutation = useUnblockAdminMutation()
+  const isLoading = blockMutation.isPending || unblockMutation.isPending
 
   const handleToggle = async (admin: Admin) => {
     try {
       setError(null)
-      setIsLoading(true)
 
       const wasBlocked = admin.isActive
 
       if (wasBlocked) {
-        await blockAdmin(admin.id)
+        await blockMutation.mutateAsync(admin.id)
       } else {
-        await unblockAdmin(admin.id)
+        await unblockMutation.mutateAsync(admin.id)
       }
 
       onSuccess?.(wasBlocked)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update admin status')
-    } finally {
-      setIsLoading(false)
     }
   }
 

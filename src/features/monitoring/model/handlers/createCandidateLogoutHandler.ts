@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { SessionMonitoringStats, SessionMonitoringDetails } from '@/entities/monitoring'
 import type { CandidateStatus } from '@/entities/candidate'
 import type { CandidateLogoutEvent } from '@/shared/lib/socket'
+import { queryKeys } from '@/shared/api/queryKeys'
 
 export function createCandidateLogoutHandler({
   sessionId,
@@ -16,7 +17,7 @@ export function createCandidateLogoutHandler({
     }
 
     queryClient.setQueryData<SessionMonitoringStats>(
-      ['monitoring', 'session', sessionId, 'statistics'],
+      queryKeys.monitoringStatistics(sessionId),
       (oldData) => {
         if (!oldData) {
           return oldData
@@ -32,7 +33,7 @@ export function createCandidateLogoutHandler({
     )
 
     queryClient.setQueryData<SessionMonitoringDetails>(
-      ['monitoring', 'session', sessionId, 'details'],
+      queryKeys.monitoringSession(sessionId),
       (oldData) => {
         if (!oldData) {
           return oldData
