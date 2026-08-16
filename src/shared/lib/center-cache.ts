@@ -13,7 +13,7 @@ export async function getCenterExists(): Promise<boolean> {
   }
 
   try {
-    const response = await apiClient.get<Center[]>('/center', {
+    const response = await apiClient.get<Center[]>('/centers', {
       timeout: 2000,
     })
 
