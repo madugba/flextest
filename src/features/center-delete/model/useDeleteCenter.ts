@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { type Center } from '@/entities/center'
-import { apiClient } from '@/shared/api/client'
+import { useDeleteCenterMutation, type Center } from '@/entities/center'
 
 export function useDeleteCenter(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentCenter, setCurrentCenter] = useState<Center | null>(null)
+
+  const deleteMutation = useDeleteCenterMutation()
+  const isLoading = deleteMutation.isPending
 
   const handleOpen = (center: Center) => {
     setCurrentCenter(center)
@@ -25,22 +26,14 @@ export function useDeleteCenter(onSuccess?: () => void) {
   const handleDelete = async () => {
     if (!currentCenter) return
 
+    setError(null)
+
     try {
-      setError(null)
-      setIsLoading(true)
-
-      const response = await apiClient.delete(`/centers/${currentCenter.id}`)
-
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Failed to delete center')
-      }
-
+      await deleteMutation.mutateAsync(currentCenter.id)
       handleClose()
       onSuccess?.()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete center')
-    } finally {
-      setIsLoading(false)
     }
   }
 

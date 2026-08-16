@@ -1,13 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { Center } from '@/entities/center'
-import { getAllCenters } from '@/entities/center'
-import type { ExamSession } from '@/entities/exam-session'
-import { getAllExamSessions } from '@/entities/exam-session'
-import type { APIConfiguration } from '@/entities/api-configuration'
-import { getAllAPIConfigurations } from '@/entities/api-configuration'
-import { getSubjectsWithQuestionsBySession } from '@/entities/subject'
+import { useCentersQuery } from '@/entities/center'
+import { useExamSessionsQuery } from '@/entities/exam-session'
+import { useAPIConfigurationsQuery, type APIConfiguration } from '@/entities/api-configuration'
+import { useSubjectsWithQuestionsQuery } from '@/entities/subject'
+import { useImportCandidatesMutation } from '@/entities/candidate'
 import { toast } from 'sonner'
 import {
   buildEndpoint,
@@ -29,14 +27,10 @@ import type {
 
 export function useCandidateImportState() {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [importTab, setImportTab] = useState('json')
   const [jsonData, setJsonData] = useState('')
 
-  const [centers, setCenters] = useState<Center[]>([])
-  const [examSessions, setExamSessions] = useState<ExamSession[]>([])
-  const [apiConfigurations, setApiConfigurations] = useState<APIConfiguration[]>([])
   const [selectedCenterId, setSelectedCenterId] = useState('')
   const [selectedExamSessionId, setSelectedExamSessionId] = useState('')
 
@@ -56,13 +50,40 @@ export function useCandidateImportState() {
   const [isLoadingStudents, setIsLoadingStudents] = useState(false)
   const [studentsError, setStudentsError] = useState<string | null>(null)
 
-  const [availableSubjects, setAvailableSubjects] = useState<SubjectWithQuestionCount>([])
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false)
   const [subjectSearch, setSubjectSearch] = useState('')
 
   const [excelFile, setExcelFile] = useState<File | null>(null)
   const [parsedExcelCandidates, setParsedExcelCandidates] = useState<ExcelCandidate[]>([])
+
+  const centersQuery = useCentersQuery()
+  const examSessionsQuery = useExamSessionsQuery()
+  const apiConfigurationsQuery = useAPIConfigurationsQuery()
+  const subjectsQuery = useSubjectsWithQuestionsQuery(selectedExamSessionId || undefined)
+  const importMutation = useImportCandidatesMutation()
+
+  const centers = useMemo(() => centersQuery.data ?? [], [centersQuery.data])
+  const examSessions = useMemo(
+    () =>
+      (examSessionsQuery.data ?? []).filter(
+        (s) => s.status === 'SCHEDULED' || s.status === 'ACTIVE'
+      ),
+    [examSessionsQuery.data]
+  )
+  const apiConfigurations = useMemo(() => apiConfigurationsQuery.data ?? [], [apiConfigurationsQuery.data])
+  const availableSubjects: SubjectWithQuestionCount = useMemo(
+    () => subjectsQuery.data ?? [],
+    [subjectsQuery.data]
+  )
+  const isLoading = importMutation.isPending
+  const isLoadingSubjects = subjectsQuery.isLoading
+
+  const setCenters = () => undefined
+  const setExamSessions = () => undefined
+  const setApiConfigurations = () => undefined
+  const setAvailableSubjects = () => undefined
+  const setIsLoadingSubjects = () => undefined
+  const setIsLoading = () => undefined
 
   const classApiConfig = useMemo(
     () => apiConfigurations.find((c) => c.id === classApiId) ?? null,
@@ -127,34 +148,21 @@ export function useCandidateImportState() {
     : selectedSubjects.length > 0 ? 'done'
     : 'idle'
 
-  const loadCenters = useCallback(async () => {
-    try {
-      const data = await getAllCenters()
-      setCenters(data)
-      if (data.length > 0) setSelectedCenterId(data[0].id)
-    } catch {
-      /* silent */
-    }
-  }, [])
+  useEffect(() => {
+    if (centers.length > 0 && !selectedCenterId) setSelectedCenterId(centers[0].id)
+  }, [centers, selectedCenterId])
 
-  const loadExamSessions = useCallback(async () => {
-    try {
-      const sessions = await getAllExamSessions()
-      const active = sessions.filter((s) => s.status === 'SCHEDULED' || s.status === 'ACTIVE')
-      setExamSessions(active)
-      if (active.length > 0) setSelectedExamSessionId(active[0].id)
-    } catch {
-      /* silent */
-    }
-  }, [])
+  useEffect(() => {
+    if (examSessions.length > 0 && !selectedExamSessionId) setSelectedExamSessionId(examSessions[0].id)
+  }, [examSessions, selectedExamSessionId])
 
-  const loadAPIConfigurations = useCallback(async () => {
-    try {
-      setApiConfigurations(await getAllAPIConfigurations())
-    } catch {
-      /* silent */
-    }
-  }, [])
+  useEffect(() => {
+    setSelectedSubjects([])
+  }, [selectedExamSessionId])
+
+  useEffect(() => {
+    if (subjectsQuery.isError) toast.error('Failed to load subjects')
+  }, [subjectsQuery.isError])
 
   const loadClasses = useCallback(async (config: APIConfiguration) => {
     setIsLoadingClasses(true)
@@ -199,35 +207,6 @@ export function useCandidateImportState() {
     },
     []
   )
-
-  const loadSubjectsForSession = useCallback(async () => {
-    if (!selectedExamSessionId) {
-      setAvailableSubjects([])
-      setSelectedSubjects([])
-      return
-    }
-    try {
-      setIsLoadingSubjects(true)
-      setAvailableSubjects(await getSubjectsWithQuestionsBySession(selectedExamSessionId))
-      setSelectedSubjects([])
-    } catch {
-      toast.error('Failed to load subjects')
-    } finally {
-      setIsLoadingSubjects(false)
-    }
-  }, [selectedExamSessionId])
-
-  useEffect(() => {
-    if (isOpen) {
-      loadCenters()
-      loadExamSessions()
-      loadAPIConfigurations()
-    }
-  }, [isOpen, loadCenters, loadExamSessions, loadAPIConfigurations])
-
-  useEffect(() => {
-    if (selectedExamSessionId) loadSubjectsForSession()
-  }, [selectedExamSessionId, loadSubjectsForSession])
 
   useEffect(() => {
     if (studentApiConfig && studentAllMapped && selectedClassId) {
@@ -303,7 +282,6 @@ export function useCandidateImportState() {
     setActiveStudents([])
     setTotalStudentCount(null)
     setStudentsError(null)
-    setAvailableSubjects([])
     setSelectedSubjects([])
     setSubjectSearch('')
     setExcelFile(null)
@@ -389,6 +367,7 @@ export function useCandidateImportState() {
     handleStudentMapChange,
     handleOpen,
     handleClose,
+    importMutation,
   }
 }
 

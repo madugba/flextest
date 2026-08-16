@@ -1,14 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import type { AIModelConfiguration } from '@/entities/ai-model'
+import { useCallback, useState } from 'react'
+import {
+  useAIModelsQuery,
+  useCreateAIModelMutation,
+  useUpdateAIModelMutation,
+  useDeleteAIModelMutation,
+  type AIModelConfiguration,
+} from '@/entities/ai-model'
 import type { Center } from '@/entities/center'
 import { createHandleCancel } from './handlers/createHandleCancel'
 import { createHandleCreate } from './handlers/createHandleCreate'
 import { createHandleDelete } from './handlers/createHandleDelete'
 import { createHandleEdit } from './handlers/createHandleEdit'
 import { createHandleSave } from './handlers/createHandleSave'
-import { createLoadAIModels } from './handlers/createLoadAIModels'
 import {
   EMPTY_AI_MODEL_FORM,
   type AIModelFormData,
@@ -16,16 +21,20 @@ import {
 } from './types'
 
 export function useAIModels(centers: Center[]): AIModelsController {
-  const [aiModels, setAiModels] = useState<AIModelConfiguration[]>([])
   const [formData, setFormData] = useState<AIModelFormData>({ ...EMPTY_AI_MODEL_FORM })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const reload = useCallback(() => createLoadAIModels(setAiModels)(), [setAiModels])
+  const query = useAIModelsQuery()
+  const createMutation = useCreateAIModelMutation()
+  const updateMutation = useUpdateAIModelMutation()
+  const deleteMutation = useDeleteAIModelMutation()
 
-  useEffect(() => {
-    void reload()
-  }, [reload])
+  const aiModels = query.data ?? []
+
+  const reload = useCallback(() => {
+    void query.refetch()
+  }, [query])
 
   const handleCreate = useCallback(
     () => createHandleCreate(setIsCreating, setFormData, centers)(),
@@ -46,9 +55,19 @@ export function useAIModels(centers: Center[]): AIModelsController {
         setIsCreating,
         setEditingId,
         setFormData,
-        reload,
+        createMutation,
+        updateMutation,
       })(),
-    [formData, isCreating, editingId, setIsCreating, setEditingId, setFormData, reload]
+    [
+      formData,
+      isCreating,
+      editingId,
+      setIsCreating,
+      setEditingId,
+      setFormData,
+      createMutation,
+      updateMutation,
+    ]
   )
 
   const handleCancel = useCallback(
@@ -57,8 +76,9 @@ export function useAIModels(centers: Center[]): AIModelsController {
   )
 
   const handleDelete = useCallback(
-    (id: string, provider: AIModelConfiguration['provider']) => createHandleDelete(reload)(id, provider),
-    [reload]
+    (id: string, provider: AIModelConfiguration['provider']) =>
+      createHandleDelete(deleteMutation)(id, provider),
+    [deleteMutation]
   )
 
   return {

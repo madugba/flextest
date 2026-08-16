@@ -1,37 +1,22 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { getSessionScores, type SessionScores } from '@/entities/exam-session'
-import { toast } from 'sonner'
+import { useCallback, useMemo, useState } from 'react'
+import { useSessionScoresQuery } from '@/entities/exam-session'
 
 export function useSessionScoresTable(sessionId: string) {
-  const [scores, setScores] = useState<SessionScores | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const scoresQuery = useSessionScoresQuery(sessionId)
+
+  const scores = scoresQuery.data ?? null
+
+  const loading = scoresQuery.isLoading
+
+  const error = scoresQuery.error?.message ?? null
+
+  const refetch = useCallback(async () => {
+    await scoresQuery.refetch()
+  }, [scoresQuery])
+
   const [search, setSearch] = useState('')
-
-  const fetchScores = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const data = await getSessionScores(sessionId)
-      setScores(data)
-    } catch (err) {
-      console.error('Error fetching session scores:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load scores'
-      setError(errorMessage)
-      toast.error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }, [sessionId])
-
-  useEffect(() => {
-    if (sessionId) {
-      fetchScores()
-    }
-  }, [sessionId, fetchScores])
 
   const filteredCandidates = useMemo(() => {
     if (!scores) return []
@@ -47,10 +32,9 @@ export function useSessionScoresTable(sessionId: string) {
     scores,
     loading,
     error,
-    refetch: fetchScores,
+    refetch,
     search,
     setSearch,
     filteredCandidates,
   }
 }
-

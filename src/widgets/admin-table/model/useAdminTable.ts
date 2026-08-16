@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { getAllAdmins, type Admin } from '@/entities/admin'
+import { useAdminsQuery } from '@/entities/admin'
 import { ApiError } from '@/shared/api/client'
 
 interface UseAdminTableProps {
@@ -9,34 +8,19 @@ interface UseAdminTableProps {
 }
 
 export function useAdminTable(props?: UseAdminTableProps) {
-  const { refreshTrigger = 0 } = props || {}
-  const [admins, setAdmins] = useState<Admin[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  void props
 
-  const fetchAdmins = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await getAllAdmins()
-      setAdmins(data)
-    } catch (err: unknown) {
-      if (err instanceof ApiError && err.statusCode === 401) {
-        setError('Authentication required. Please login to access admin management.')
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to fetch admins')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+  const adminsQuery = useAdminsQuery()
 
-  useEffect(() => {
-    fetchAdmins()
-  }, [refreshTrigger])
+  const admins = adminsQuery.data ?? []
+  const loading = adminsQuery.isLoading
+  const error =
+    adminsQuery.error instanceof ApiError && adminsQuery.error.statusCode === 401
+      ? 'Authentication required. Please login to access admin management.'
+      : adminsQuery.error?.message ?? null
 
   const refresh = () => {
-    fetchAdmins()
+    void adminsQuery.refetch()
   }
 
   return {

@@ -2,7 +2,7 @@ import type { Dispatch, FormEvent, SetStateAction } from 'react'
 import { toast } from 'sonner'
 import type { Center } from '@/entities/center'
 import {
-  createScoreConfiguration,
+  useCreateScoreConfigurationMutation,
   type CreateScoreConfigurationRequest,
   type PreviewScoreResponse,
   type ValidateFormulaResponse,
@@ -16,8 +16,7 @@ interface CreateHandleCreateDeps {
   setScoreForm: Dispatch<SetStateAction<ScoreFormData>>
   setValidationResult: Dispatch<SetStateAction<ValidateFormulaResponse | null>>
   setPreviewResult: Dispatch<SetStateAction<PreviewScoreResponse | null>>
-  setIsCreatingScore: Dispatch<SetStateAction<boolean>>
-  reload: () => void
+  createMutation: ReturnType<typeof useCreateScoreConfigurationMutation>
 }
 
 export function createHandleCreate({
@@ -26,12 +25,10 @@ export function createHandleCreate({
   setScoreForm,
   setValidationResult,
   setPreviewResult,
-  setIsCreatingScore,
-  reload,
+  createMutation,
 }: CreateHandleCreateDeps) {
   return async (e: FormEvent) => {
     e.preventDefault()
-    setIsCreatingScore(true)
 
     try {
       const centerId = centers.length > 0 ? centers[0].id : ''
@@ -53,17 +50,14 @@ export function createHandleCreate({
         centerId,
       }
 
-      await createScoreConfiguration(newConfig)
+      await createMutation.mutateAsync(newConfig)
       toast.success('Score configuration created successfully')
 
       setScoreForm({ ...EMPTY_SCORE_FORM })
       setValidationResult(null)
       setPreviewResult(null)
-      await reload()
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'Failed to create score configuration'))
-    } finally {
-      setIsCreatingScore(false)
     }
   }
 }

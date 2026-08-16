@@ -26,3 +26,12 @@ export {
   validateFormula,
   previewScore,
 } from './api/scoreConfigurationApi';
+export { useScoreConfigurationsQuery, useActiveScoreConfigurationQuery } from './model/queries';
+export {
+  useCreateScoreConfigurationMutation,
+  useUpdateScoreConfigurationMutation,
+  useActivateScoreConfigurationMutation,
+  useDeleteScoreConfigurationMutation,
+  useValidateFormulaMutation,
+  usePreviewScoreMutation,
+} from './model/mutations';

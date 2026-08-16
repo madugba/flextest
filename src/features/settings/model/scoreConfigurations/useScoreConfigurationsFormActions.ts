@@ -3,7 +3,11 @@
 import { useCallback } from 'react'
 import type { FormEvent } from 'react'
 import type { Center } from '@/entities/center'
-import type { ScoreConfiguration } from '@/entities/score-configuration'
+import {
+  useCreateScoreConfigurationMutation,
+  useUpdateScoreConfigurationMutation,
+  type ScoreConfiguration,
+} from '@/entities/score-configuration'
 import { createHandleCancelEdit } from './handlers/createHandleCancelEdit'
 import { createHandleCreate } from './handlers/createHandleCreate'
 import { createHandleEdit } from './handlers/createHandleEdit'
@@ -12,8 +16,9 @@ import type { ScoreConfigurationState } from './useScoreConfigurationState'
 
 export function useScoreConfigurationsFormActions(
   state: ScoreConfigurationState,
-  reload: () => void,
-  centers: Center[]
+  centers: Center[],
+  createMutation: ReturnType<typeof useCreateScoreConfigurationMutation>,
+  updateMutation: ReturnType<typeof useUpdateScoreConfigurationMutation>
 ) {
   const {
     scoreForm,
@@ -22,8 +27,6 @@ export function useScoreConfigurationsFormActions(
     setEditingScoreId,
     setValidationResult,
     setPreviewResult,
-    setIsCreatingScore,
-    setIsUpdatingScore,
   } = state
 
   const handleCreateScore = useCallback(
@@ -34,8 +37,7 @@ export function useScoreConfigurationsFormActions(
         setScoreForm,
         setValidationResult,
         setPreviewResult,
-        setIsCreatingScore,
-        reload,
+        createMutation,
       })(e),
     [
       scoreForm,
@@ -43,8 +45,7 @@ export function useScoreConfigurationsFormActions(
       setScoreForm,
       setValidationResult,
       setPreviewResult,
-      setIsCreatingScore,
-      reload,
+      createMutation,
     ]
   )
 
@@ -57,8 +58,7 @@ export function useScoreConfigurationsFormActions(
         setScoreForm,
         setValidationResult,
         setPreviewResult,
-        setIsUpdatingScore,
-        reload,
+        updateMutation,
       })(e),
     [
       scoreForm,
@@ -67,8 +67,7 @@ export function useScoreConfigurationsFormActions(
       setScoreForm,
       setValidationResult,
       setPreviewResult,
-      setIsUpdatingScore,
-      reload,
+      updateMutation,
     ]
   )
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import {
-  updateAdminPassword,
+  useUpdateAdminPasswordMutation,
   validatePasswordChange,
   type Admin,
   type UpdatePasswordRequest,
@@ -10,13 +10,15 @@ import {
 
 export function useChangePassword(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null)
   const [formData, setFormData] = useState<UpdatePasswordRequest>({
     currentPassword: '',
     newPassword: '',
   })
+
+  const passwordMutation = useUpdateAdminPasswordMutation()
+  const isLoading = passwordMutation.isPending
 
   const handleOpen = (admin: Admin) => {
     setSelectedAdmin(admin)
@@ -34,25 +36,20 @@ export function useChangePassword(onSuccess?: () => void) {
   const handleSubmit = async () => {
     if (!selectedAdmin) return
 
+    setError(null)
+
+    const validationError = validatePasswordChange(formData)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     try {
-      setError(null)
-
-      const validationError = validatePasswordChange(formData)
-      if (validationError) {
-        setError(validationError)
-        return
-      }
-
-      setIsLoading(true)
-
-      await updateAdminPassword(selectedAdmin.id, formData)
-
+      await passwordMutation.mutateAsync({ id: selectedAdmin.id, data: formData })
       handleClose()
       onSuccess?.()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to change password')
-    } finally {
-      setIsLoading(false)
     }
   }
 

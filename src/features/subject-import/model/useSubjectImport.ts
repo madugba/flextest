@@ -1,15 +1,27 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAllAPIConfigurations, type APIConfiguration } from '@/entities/api-configuration'
+import { type APIConfiguration, useAPIConfigurationsQuery } from '@/entities/api-configuration'
 import { toast } from 'sonner'
 import { buildEndpoint, extractPlaceholders, parseSubject, proxyFetch } from '../lib/import-utils'
 import type { ClassResponse, SubjectResponse, ValueKey } from './types'
 
-export function useSubjectImport(open: boolean, onOpenChange: (open: boolean) => void) {
+const EMPTY_CONFIGURATIONS: APIConfiguration[] = []
+
+export function useSubjectImport(_open: boolean, onOpenChange: (open: boolean) => void) {
   const router = useRouter()
-  const [apiConfigurations, setApiConfigurations] = useState<APIConfiguration[]>([])
+
+  const apiConfigurationsQuery = useAPIConfigurationsQuery()
+  const apiConfigurations = apiConfigurationsQuery.data ?? EMPTY_CONFIGURATIONS
+
+  const didToastApiError = useRef(false)
+  useEffect(() => {
+    if (apiConfigurationsQuery.isError && !didToastApiError.current) {
+      didToastApiError.current = true
+      toast.error('Failed to load API configurations')
+    }
+  }, [apiConfigurationsQuery.isError])
 
   // Step 1 — API config for classes
   const [classConfigId, setClassConfigId] = useState('')
@@ -41,15 +53,6 @@ export function useSubjectImport(open: boolean, onOpenChange: (open: boolean) =>
   )
 
   const readyToFetch = !!(selectedClassId && subjectConfig && allPlaceholdersMapped)
-
-  const loadAPIConfigurations = useCallback(async () => {
-    try {
-      const data = await getAllAPIConfigurations()
-      setApiConfigurations(data)
-    } catch {
-      toast.error('Failed to load API configurations')
-    }
-  }, [])
 
   const loadClasses = useCallback(async (config: APIConfiguration) => {
     setIsLoadingClasses(true)
@@ -116,13 +119,6 @@ export function useSubjectImport(open: boolean, onOpenChange: (open: boolean) =>
     []
   )
 
-  useEffect(() => {
-    if (open) {
-      loadAPIConfigurations()
-    }
-  }, [open, loadAPIConfigurations])
-
-  // Auto-fetch subjects when class + subject API + all mappings are ready
   useEffect(() => {
     if (readyToFetch && subjectConfig) {
       fetchSubjects(selectedClassId, subjectConfig, placeholderMap)

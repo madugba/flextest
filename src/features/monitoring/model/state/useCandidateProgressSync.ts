@@ -1,9 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { getCandidatesProgress } from '@/entities/monitoring'
+import { useCandidatesProgressQuery } from '@/entities/monitoring'
 import type { SessionMonitoringDetails } from '@/entities/monitoring'
+import { queryKeys } from '@/shared/api/queryKeys'
 import type { CandidateProgressRef } from './CandidateProgressRef'
 
 interface UseCandidateProgressSyncArgs {
@@ -17,15 +18,14 @@ export function useCandidateProgressSync({
   queryClient,
   progressRef,
 }: UseCandidateProgressSyncArgs) {
-  const progressSeedRef = useRef<string | null>(null)
+  const { data: progressData, refetch: refetchProgress } = useCandidatesProgressQuery(sessionId)
 
-  const syncCandidatesProgress = useCallback(async () => {
-    if (!sessionId) return
-    try {
-      const progressData = await getCandidatesProgress(sessionId)
+  const applyProgress = useCallback(
+    (data: Array<{ candidateId: string; totalQuestions: number; totalAttempted: number }>) => {
+      if (!sessionId) return
 
       // Keep the ref up to date so future detail refetches can re-apply.
-      for (const p of progressData) {
+      for (const p of data) {
         progressRef.current.set(p.candidateId, {
           attempted: p.totalAttempted,
           totalQuestions: p.totalQuestions,
@@ -33,11 +33,11 @@ export function useCandidateProgressSync({
       }
 
       queryClient.setQueryData<SessionMonitoringDetails>(
-        ['monitoring', 'session', sessionId, 'details'],
+        queryKeys.monitoringSession(sessionId),
         (oldData) => {
           if (!oldData) return oldData
 
-          const progressMap = new Map(progressData.map((p) => [p.candidateId, p]))
+          const progressMap = new Map(data.map((p) => [p.candidateId, p]))
 
           const updatedCandidates = oldData.candidates.map((candidate) => {
             const progress = progressMap.get(candidate.id)
@@ -57,24 +57,24 @@ export function useCandidateProgressSync({
           }
         }
       )
+    },
+    [sessionId, queryClient, progressRef]
+  )
+
+  useEffect(() => {
+    if (!sessionId || !progressData) return
+    applyProgress(progressData)
+  }, [sessionId, progressData, applyProgress])
+
+  const syncCandidatesProgress = useCallback(async () => {
+    if (!sessionId) return
+    try {
+      const result = await refetchProgress()
+      applyProgress(result.data ?? [])
     } catch (error) {
       console.error('[useMonitoringData] Failed to sync progress', error)
     }
-  }, [sessionId, queryClient, progressRef])
-
-  useEffect(() => {
-    if (!sessionId || progressSeedRef.current === sessionId) {
-      return
-    }
-    progressSeedRef.current = sessionId
-    void syncCandidatesProgress()
-
-    return () => {
-      if (progressSeedRef.current === sessionId) {
-        progressSeedRef.current = null
-      }
-    }
-  }, [sessionId, syncCandidatesProgress])
+  }, [sessionId, refetchProgress, applyProgress])
 
   return { syncCandidatesProgress }
 }

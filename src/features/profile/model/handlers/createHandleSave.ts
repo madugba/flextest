@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { updateAdmin } from '@/entities/admin'
+import { useUpdateAdminMutation } from '@/entities/admin'
 import type { User } from '@/shared/api/authApi'
 
 interface CreateHandleSaveDeps {
@@ -8,7 +8,7 @@ interface CreateHandleSaveDeps {
   firstName: string
   lastName: string
   updateUser: (userData: Partial<User>) => void
-  setIsLoading: Dispatch<SetStateAction<boolean>>
+  updateMutation: ReturnType<typeof useUpdateAdminMutation>
   setIsEditing: Dispatch<SetStateAction<boolean>>
 }
 
@@ -17,16 +17,17 @@ export function createHandleSave({
   firstName,
   lastName,
   updateUser,
-  setIsLoading,
+  updateMutation,
   setIsEditing,
 }: CreateHandleSaveDeps) {
   return async () => {
     if (!user?.id) return
 
     try {
-      setIsLoading(true)
-
-      const updated = await updateAdmin(user.id, { firstName, lastName })
+      const updated = await updateMutation.mutateAsync({
+        id: user.id,
+        data: { firstName, lastName },
+      })
 
       updateUser(updated as Partial<User>)
 
@@ -38,8 +39,6 @@ export function createHandleSave({
       toast.error('Failed to update profile', {
         description: err instanceof Error ? err.message : 'An unexpected error occurred',
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 }

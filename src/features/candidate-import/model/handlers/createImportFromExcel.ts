@@ -1,4 +1,3 @@
-import { importCandidates } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'
 import { toast } from 'sonner'
 import type { CandidateImportState } from '../useCandidateImportState'
@@ -13,9 +12,9 @@ export function createImportFromExcel(
       parsedExcelCandidates,
       selectedExamSessionId,
       selectedSubjects,
+      importMutation,
       handleClose,
       setError,
-      setIsLoading,
     } = state
 
     if (!excelFile || !parsedExcelCandidates.length) {
@@ -33,7 +32,6 @@ export function createImportFromExcel(
 
     try {
       setError(null)
-      setIsLoading(true)
       toast.loading(`Importing ${parsedExcelCandidates.length} candidate(s)...`, {
         id: 'import-loading',
       })
@@ -53,7 +51,7 @@ export function createImportFromExcel(
         })
         .filter((c): c is NonNullable<typeof c> => c !== null)
       if (!candidates.length) throw new Error('No valid candidates to import')
-      const result = await importCandidates({ candidates })
+      const result = await importMutation.mutateAsync({ candidates })
       toast.dismiss('import-loading')
       handleClose()
       if (result.failed > 0) {
@@ -71,8 +69,6 @@ export function createImportFromExcel(
       toast.dismiss('import-loading')
       setError(msg)
       toast.error('Import failed', { description: msg })
-    } finally {
-      setIsLoading(false)
     }
   }
 }

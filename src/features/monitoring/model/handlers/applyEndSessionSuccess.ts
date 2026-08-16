@@ -1,12 +1,13 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { SessionMonitoringDetails } from '@/entities/monitoring'
 import type { CandidateStatus } from '@/entities/candidate'
+import { queryKeys } from '@/shared/api/queryKeys'
 
 export function applyEndSessionSuccess(queryClient: QueryClient, sessionId: string) {
   // Optimistic update — shows SUBMITTED immediately in the UI while
   // candidates are going through their 5-second countdown.
   queryClient.setQueryData<SessionMonitoringDetails>(
-    ['monitoring', 'session', sessionId, 'details'],
+    queryKeys.monitoringSession(sessionId),
     (old) => {
       if (!old) return old
       return {
@@ -23,13 +24,13 @@ export function applyEndSessionSuccess(queryClient: QueryClient, sessionId: stri
   // Refresh stats counts (active → submitted) but leave details alone
   // so the optimistic patch is not immediately overwritten.
   queryClient.invalidateQueries({
-    queryKey: ['monitoring', 'session', sessionId, 'statistics'],
+    queryKey: queryKeys.monitoringStatistics(sessionId),
   })
 
   // After candidates have had enough time to self-submit, do a full sync
   // to reconcile any candidates who were offline and couldn't receive the
   // session:update event.
   setTimeout(() => {
-    queryClient.invalidateQueries({ queryKey: ['monitoring', 'session', sessionId] })
+    queryClient.invalidateQueries({ queryKey: queryKeys.monitoringSession(sessionId) })
   }, 15_000)
 }

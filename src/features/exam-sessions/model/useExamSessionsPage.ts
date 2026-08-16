@@ -1,10 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import type { ExamSession } from '@/entities/exam-session'
+import type { ExamSession, SessionStatus } from '@/entities/exam-session'
 import type { Subject } from '@/entities/subject'
 import type { APIConfiguration } from '@/entities/api-configuration'
-import { useExamSessionsData } from './state/useExamSessionsData'
+import {
+  useExamSessionsQuery,
+  useCreateExamSessionMutation,
+  useUpdateExamSessionMutation,
+  useDeleteExamSessionMutation,
+  useImportExamSessionsMutation,
+  useRescheduleExamSessionMutation,
+} from '@/entities/exam-session'
+import { useCentersQuery } from '@/entities/center'
+import { useSubjectsQuery } from '@/entities/subject'
+import { useAPIConfigurationsQuery } from '@/entities/api-configuration'
 import { filterExamSessions } from './selectors/filterExamSessions'
 import { createUpdateFormField, createResetForm } from './handlers/createFormHandlers'
 import { createCreateHandler } from './handlers/createCreateHandler'
@@ -17,19 +27,6 @@ import { createRescheduleHandler } from './handlers/createRescheduleHandler'
 import { EMPTY_EXAM_SESSION_FORM, type ExamSessionFormData } from './types'
 
 export function useExamSessionsPage() {
-  const {
-    examSessions,
-    centers,
-    subjects,
-    apiConfigurations,
-    loading,
-    search,
-    setSearch,
-    statusFilter,
-    setStatusFilter,
-    fetchExamSessions,
-  } = useExamSessionsData()
-
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -37,7 +34,6 @@ export function useExamSessionsPage() {
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [selectedSession, setSelectedSession] = useState<ExamSession | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [confirmSessionName, setConfirmSessionName] = useState('')
 
   const [selectedConfigId, setSelectedConfigId] = useState('')
@@ -53,45 +49,73 @@ export function useExamSessionsPage() {
   >([])
   const [isDuplicateLoading, setIsDuplicateLoading] = useState(false)
 
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<SessionStatus | ''>('')
+
+  const examSessionsQuery = useExamSessionsQuery(statusFilter || undefined)
+  const centersQuery = useCentersQuery()
+  const subjectsQuery = useSubjectsQuery()
+  const apiConfigurationsQuery = useAPIConfigurationsQuery()
+
+  const examSessions = examSessionsQuery.data ?? []
+  const centers = centersQuery.data ?? []
+  const subjects = subjectsQuery.data ?? []
+  const apiConfigurations = apiConfigurationsQuery.data ?? []
+
+  const createMutation = useCreateExamSessionMutation()
+  const updateMutation = useUpdateExamSessionMutation()
+  const deleteMutation = useDeleteExamSessionMutation()
+  const importMutation = useImportExamSessionsMutation()
+  const rescheduleMutation = useRescheduleExamSessionMutation()
+
+  const loading =
+    examSessionsQuery.isLoading ||
+    centersQuery.isLoading ||
+    subjectsQuery.isLoading ||
+    apiConfigurationsQuery.isLoading
+
+  const isSubmitting =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    importMutation.isPending ||
+    rescheduleMutation.isPending
+
   const updateFormField = createUpdateFormField(setFormData)
   const resetForm = createResetForm(setFormData)
 
   const handleCreate = createCreateHandler({
     formData,
-    setIsSubmitting,
+    createMutation,
     setShowCreateDialog,
     resetForm,
-    fetchExamSessions,
   })
 
   const handleEdit = createEditHandler({
     selectedSession,
     formData,
-    setIsSubmitting,
+    updateMutation,
     setShowEditDialog,
     setSelectedSession,
     resetForm,
-    fetchExamSessions,
   })
 
   const handleDelete = createDeleteHandler({
     selectedSession,
-    setIsSubmitting,
+    deleteMutation,
     setShowDeleteDialog,
     setSelectedSession,
-    fetchExamSessions,
   })
 
   const { loadAPIConfig, resetImportForm, handleImportFromApi } = createImportHandlers({
     apiConfigurations,
     selectedConfig,
     selectedClass,
+    importMutation,
     setSelectedConfigId,
     setSelectedConfig,
     setSelectedClass,
-    setIsSubmitting,
     setShowImportDialog,
-    fetchExamSessions,
   })
 
   const { openEditDialog, openDeleteDialog, openRescheduleDialog, openDuplicateDialog, toggleDuplicateSubject } =
@@ -113,23 +137,21 @@ export function useExamSessionsPage() {
     selectedSession,
     duplicateName,
     duplicateSelectedSubjects,
-    setIsSubmitting,
+    createMutation,
     setShowDuplicateDialog,
     setSelectedSession,
     setDuplicateName,
     setDuplicateSelectedSubjects,
     setDuplicateSourceSubjects,
-    fetchExamSessions,
   })
 
   const handleReschedule = createRescheduleHandler({
     selectedSession,
     confirmSessionName,
-    setIsSubmitting,
+    rescheduleMutation,
     setShowRescheduleDialog,
     setSelectedSession,
     setConfirmSessionName,
-    fetchExamSessions,
   })
 
   const filteredSessions = filterExamSessions(examSessions, search)

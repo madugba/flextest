@@ -1,34 +1,29 @@
 'use client'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
+import {
+  useCreateSubjectMutation,
+  useDeleteSubjectMutation,
+  useUpdateSubjectMutation,
+} from '@/entities/subject'
 import { createHandleCreate } from './handlers/createHandleCreate'
 import { createHandleDelete } from './handlers/createHandleDelete'
 import { createHandleEdit } from './handlers/createHandleEdit'
 import type { useDialogState } from './state/useDialogState'
 import type { useSearchState } from './state/useSearchState'
 import type { useSubjectFormState } from './state/useSubjectFormState'
-import type { useSubjectsListState } from './state/useSubjectsListState'
 
 export function useSubjectsPageActions(
-  listState: ReturnType<typeof useSubjectsListState>,
   searchState: ReturnType<typeof useSearchState>,
   dialogState: ReturnType<typeof useDialogState>,
-  formState: ReturnType<typeof useSubjectFormState>
+  formState: ReturnType<typeof useSubjectFormState>,
+  createMutation: ReturnType<typeof useCreateSubjectMutation>,
+  updateMutation: ReturnType<typeof useUpdateSubjectMutation>,
+  deleteMutation: ReturnType<typeof useDeleteSubjectMutation>
 ) {
-  const { fetchSubjects } = listState
-  const { search, setSearch } = searchState
+  const { setSearch } = searchState
   const { setShowCreateDialog, setShowEditDialog, setShowDeleteDialog } = dialogState
-  const {
-    selectedSubject,
-    setSelectedSubject,
-    subjectName,
-    setSubjectName,
-    setIsSubmitting,
-  } = formState
-
-  useEffect(() => {
-    void fetchSubjects(search)
-  }, [fetchSubjects, search])
+  const { selectedSubject, setSelectedSubject, subjectName, setSubjectName } = formState
 
   const handleCreate = useCallback(
     () =>
@@ -37,10 +32,9 @@ export function useSubjectsPageActions(
         setSubjectName,
         setShowCreateDialog,
         setSearch,
-        setIsSubmitting,
-        fetchSubjects,
+        createMutation,
       })(),
-    [subjectName, setSubjectName, setShowCreateDialog, setSearch, setIsSubmitting, fetchSubjects]
+    [subjectName, setSubjectName, setShowCreateDialog, setSearch, createMutation]
   )
 
   const handleEdit = useCallback(
@@ -48,22 +42,18 @@ export function useSubjectsPageActions(
       createHandleEdit({
         selectedSubject,
         subjectName,
-        search,
         setSubjectName,
         setShowEditDialog,
         setSelectedSubject,
-        setIsSubmitting,
-        fetchSubjects,
+        updateMutation,
       })(),
     [
       selectedSubject,
       subjectName,
-      search,
       setSubjectName,
       setShowEditDialog,
       setSelectedSubject,
-      setIsSubmitting,
-      fetchSubjects,
+      updateMutation,
     ]
   )
 
@@ -71,20 +61,11 @@ export function useSubjectsPageActions(
     () =>
       createHandleDelete({
         selectedSubject,
-        search,
         setShowDeleteDialog,
         setSelectedSubject,
-        setIsSubmitting,
-        fetchSubjects,
+        deleteMutation,
       })(),
-    [
-      selectedSubject,
-      search,
-      setShowDeleteDialog,
-      setSelectedSubject,
-      setIsSubmitting,
-      fetchSubjects,
-    ]
+    [selectedSubject, setShowDeleteDialog, setSelectedSubject, deleteMutation]
   )
 
   return {

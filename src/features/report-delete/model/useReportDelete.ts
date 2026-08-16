@@ -1,38 +1,27 @@
 'use client'
 
-import { useState } from 'react'
-import { deleteExamSession } from '@/entities/exam-session'
 import { toast } from 'sonner'
+import { useDeleteExamSessionMutation } from '@/entities/exam-session'
 
-/**
- * Hook for deleting exam session reports
- * Handles delete operation with loading states and error handling
- */
 export function useReportDelete(onSuccess?: () => void) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const deleteMutation = useDeleteExamSessionMutation()
+
+  const error = deleteMutation.error?.message ?? null
 
   const deleteReport = async (sessionId: string) => {
-    setLoading(true)
-    setError(null)
-
     try {
-      await deleteExamSession(sessionId)
+      await deleteMutation.mutateAsync(sessionId)
       toast.success('Session deleted successfully')
       onSuccess?.()
-    } catch (err) {
+    } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete session'
-      setError(errorMessage)
       toast.error(errorMessage)
-    } finally {
-      setLoading(false)
     }
   }
 
   return {
     deleteReport,
-    loading,
+    loading: deleteMutation.isPending,
     error,
   }
 }
-

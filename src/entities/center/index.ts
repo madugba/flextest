@@ -1,4 +1,6 @@
 export type { Center, CreateCenterRequest, UpdateCenterRequest } from './model/types'
-export { getAllCenters, getCenterById, createCenter, updateCenter } from './api/centerApi'
+export { getAllCenters, getCenterById, createCenter, updateCenter, deleteCenter } from './api/centerApi'
+export { useCentersQuery, useCenterQuery } from './model/queries'
+export { useCreateCenterMutation, useUpdateCenterMutation, useDeleteCenterMutation } from './model/mutations'
 export { getCenterDisplayName, getCenterFullAddress, getCenterShortAddress } from './lib/helpers'
 export { validateCreateCenter, validateUpdateCenter } from './lib/validation'

@@ -1,13 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { createCandidate, type CreateCandidateRequest } from '@/entities/candidate'
-import { ApiError } from '@/shared/api/client'
+import { useCreateCandidateMutation, type CreateCandidateRequest } from '@/entities/candidate'
 
 export function useAddCandidate(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<CreateCandidateRequest>({
     email: '',
     surname: '',
@@ -19,14 +16,19 @@ export function useAddCandidate(onSuccess?: () => void) {
     subjects: [],
   })
 
+  const createMutation = useCreateCandidateMutation()
+
+  const isLoading = createMutation.isPending
+  const error = createMutation.error?.message ?? null
+
   const handleOpen = () => {
     setIsOpen(true)
-    setError(null)
+    createMutation.reset()
   }
 
   const handleClose = () => {
     setIsOpen(false)
-    setError(null)
+    createMutation.reset()
     setFormData({
       email: '',
       surname: '',
@@ -40,23 +42,9 @@ export function useAddCandidate(onSuccess?: () => void) {
   }
 
   const handleSubmit = async () => {
-    try {
-      setError(null)
-      setIsLoading(true)
-
-      await createCandidate(formData)
-
-      handleClose()
-      onSuccess?.()
-    } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to create candidate')
-      }
-    } finally {
-      setIsLoading(false)
-    }
+    await createMutation.mutateAsync(formData)
+    handleClose()
+    onSuccess?.()
   }
 
   return {

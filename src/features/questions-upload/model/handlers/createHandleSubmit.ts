@@ -1,10 +1,10 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react'
 import { toast } from 'sonner'
 import {
-  createQuestion,
-  updateQuestion,
   type AnswerOption,
   type Question,
+  useCreateQuestionMutation,
+  useUpdateQuestionMutation,
 } from '@/entities/question'
 import { validateQuestionForm } from '../selectors/validateQuestionForm'
 import { getResponseErrorMessage } from '../selectors/getResponseErrorMessage'
@@ -15,30 +15,24 @@ export interface HandleSubmitDeps {
   editingQuestion: Question | null
   subjectId: string
   sessionId: string
-  setIsSaving: Dispatch<SetStateAction<boolean>>
-  setError: Dispatch<SetStateAction<string | null>>
-  setQuestions: Dispatch<SetStateAction<Question[]>>
+  createMutation: ReturnType<typeof useCreateQuestionMutation>
+  updateMutation: ReturnType<typeof useUpdateQuestionMutation>
   setEditDialogOpen: Dispatch<SetStateAction<boolean>>
   setActiveTab: Dispatch<SetStateAction<string>>
   resetForm: () => void
-  loadData: (bypassCache?: boolean) => Promise<void>
 }
 
-export function createHandleSubmit(
-  deps: HandleSubmitDeps
-): (e: FormEvent) => Promise<void> {
+export function createHandleSubmit(deps: HandleSubmitDeps): (e: FormEvent) => Promise<void> {
   const {
     formData,
     editingQuestion,
     subjectId,
     sessionId,
-    setIsSaving,
-    setError,
-    setQuestions,
+    createMutation,
+    updateMutation,
     setEditDialogOpen,
     setActiveTab,
     resetForm,
-    loadData,
   } = deps
 
   return async (e: FormEvent) => {
@@ -50,50 +44,33 @@ export function createHandleSubmit(
       return
     }
 
-    try {
-      setIsSaving(true)
-      setError(null)
+    const payload = {
+      question: formData.question,
+      optionA: formData.optionA,
+      optionB: formData.optionB,
+      optionC: formData.optionC,
+      optionD: formData.optionD,
+      answer: formData.answer as AnswerOption,
+      subjectId,
+      sessionId,
+    }
 
+    try {
       if (editingQuestion) {
-        const updated = await updateQuestion(editingQuestion.id, {
-          question: formData.question,
-          optionA: formData.optionA,
-          optionB: formData.optionB,
-          optionC: formData.optionC,
-          optionD: formData.optionD,
-          answer: formData.answer as AnswerOption,
-          subjectId,
-          sessionId,
-        })
-        setQuestions((prev) => prev.map((q) => (q.id === editingQuestion.id ? updated : q)))
+        await updateMutation.mutateAsync({ id: editingQuestion.id, data: payload })
         toast.success('Question updated successfully!')
         setEditDialogOpen(false)
       } else {
-        await createQuestion({
-          question: formData.question,
-          optionA: formData.optionA,
-          optionB: formData.optionB,
-          optionC: formData.optionC,
-          optionD: formData.optionD,
-          answer: formData.answer as AnswerOption,
-          subjectId,
-          sessionId,
-        })
+        await createMutation.mutateAsync(payload)
         toast.success('Question created successfully!')
         setActiveTab('list')
       }
 
       resetForm()
-      if (!editingQuestion) {
-        await loadData(true)
-      }
     } catch (err: unknown) {
       const errorMessage = getResponseErrorMessage(err, 'Failed to save question')
       toast.error(errorMessage)
-      setError(errorMessage)
       console.error('Question save error:', err)
-    } finally {
-      setIsSaving(false)
     }
   }
 }

@@ -1,7 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { deleteCandidate, getCandidateById, type Candidate } from '@/entities/candidate'
+import {
+  useDeleteCandidateMutation,
+  getCandidateById,
+  type Candidate,
+} from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'
 import { getBlockedCandidateIds } from '../lib/getBlockedCandidateIds'
 
@@ -9,10 +13,12 @@ type VerifyState = 'idle' | 'verifying' | 'blocked' | 'ready'
 
 export function useDeleteCandidate(onSuccess?: () => void) {
   const [isOpen, setIsOpen]                       = useState(false)
-  const [isLoading, setIsLoading]                 = useState(false)
   const [verifyState, setVerifyState]             = useState<VerifyState>('idle')
   const [error, setError]                         = useState<string | null>(null)
   const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null)
+
+  const deleteMutation = useDeleteCandidateMutation()
+  const isLoading = deleteMutation.isPending
 
   const handleOpen = async (candidate: Candidate) => {
     setCandidateToDelete(candidate)
@@ -46,9 +52,8 @@ export function useDeleteCandidate(onSuccess?: () => void) {
 
     try {
       setError(null)
-      setIsLoading(true)
 
-      await deleteCandidate(candidateToDelete.id)
+      await deleteMutation.mutateAsync(candidateToDelete.id)
 
       handleClose()
       onSuccess?.()
@@ -58,8 +63,6 @@ export function useDeleteCandidate(onSuccess?: () => void) {
       } else {
         setError(err instanceof Error ? err.message : 'Failed to delete candidate')
       }
-    } finally {
-      setIsLoading(false)
     }
   }
 

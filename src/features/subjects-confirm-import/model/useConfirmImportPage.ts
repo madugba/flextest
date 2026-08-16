@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useConfirmImportSubjectsMutation } from '@/entities/subject'
 import type { PendingSubject } from './types'
 import { createHandleCancel } from './handlers/createHandleCancel'
 import { createHandleConfirmImport } from './handlers/createHandleConfirmImport'
@@ -15,9 +16,10 @@ import { hasEmptySubjectNames } from './selectors/hasEmptySubjectNames'
 export function useConfirmImportPage() {
   const router = useRouter()
   const [subjects, setSubjects] = useState<PendingSubject[]>([])
-  const [isImporting, setIsImporting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+
+  const confirmMutation = useConfirmImportSubjectsMutation()
 
   const loadPendingImport = useCallback(
     () => createLoadPendingImport({ router, setSubjects, setIsLoading })(),
@@ -39,8 +41,8 @@ export function useConfirmImportPage() {
   )
 
   const handleConfirmImport = useCallback(
-    () => createHandleConfirmImport({ subjects, router, setIsImporting })(),
-    [subjects, router, setIsImporting]
+    () => createHandleConfirmImport({ subjects, router, confirmMutation })(),
+    [subjects, router, confirmMutation]
   )
 
   const handleCancel = useCallback(() => createHandleCancel({ router })(), [router])
@@ -56,7 +58,7 @@ export function useConfirmImportPage() {
 
   return {
     subjects,
-    isImporting,
+    isImporting: confirmMutation.isPending,
     searchQuery,
     setSearchQuery,
     isLoading,

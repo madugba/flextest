@@ -1,17 +1,16 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { bulkImportQuestions } from '@/entities/question'
+import { useBulkImportQuestionsMutation } from '@/entities/question'
 import type { GeneratedQuestion } from '@/shared/services/ai-generation.service'
 
 export interface HandleSubmitGeneratedDeps {
   generatedQuestions: GeneratedQuestion[]
   subjectId: string
   sessionId: string
-  setIsSubmittingGenerated: Dispatch<SetStateAction<boolean>>
+  importMutation: ReturnType<typeof useBulkImportQuestionsMutation>
   setGeneratedQuestions: Dispatch<SetStateAction<GeneratedQuestion[]>>
   setPreviewDialogOpen: Dispatch<SetStateAction<boolean>>
   setAiGenerateDialogOpen: Dispatch<SetStateAction<boolean>>
-  loadData: (bypassCache?: boolean) => Promise<void>
 }
 
 export function createHandleSubmitGenerated(
@@ -21,11 +20,10 @@ export function createHandleSubmitGenerated(
     generatedQuestions,
     subjectId,
     sessionId,
-    setIsSubmittingGenerated,
+    importMutation,
     setGeneratedQuestions,
     setPreviewDialogOpen,
     setAiGenerateDialogOpen,
-    loadData,
   } = deps
 
   return async () => {
@@ -35,8 +33,6 @@ export function createHandleSubmitGenerated(
     }
 
     try {
-      setIsSubmittingGenerated(true)
-
       const formattedQuestions = generatedQuestions.map((question) => ({
         question: question.question,
         optionA: question.optionA,
@@ -48,7 +44,7 @@ export function createHandleSubmitGenerated(
         sessionId,
       }))
 
-      const result = await bulkImportQuestions({
+      const result = await importMutation.mutateAsync({
         questions: formattedQuestions,
       })
 
@@ -59,13 +55,10 @@ export function createHandleSubmitGenerated(
       setGeneratedQuestions([])
       setPreviewDialogOpen(false)
       setAiGenerateDialogOpen(false)
-      await loadData(true)
     } catch (err: unknown) {
       console.error('[handleSubmitGenerated] Error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit questions'
       toast.error(errorMessage)
-    } finally {
-      setIsSubmittingGenerated(false)
     }
   }
 }

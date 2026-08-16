@@ -1,13 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { deleteAdmin, type Admin } from '@/entities/admin'
+import { useDeleteAdminMutation, type Admin } from '@/entities/admin'
 
 export function useDeleteAdmin(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null)
+
+  const deleteMutation = useDeleteAdminMutation()
+  const isLoading = deleteMutation.isPending
 
   const handleOpen = (admin: Admin) => {
     setSelectedAdmin(admin)
@@ -24,18 +26,14 @@ export function useDeleteAdmin(onSuccess?: () => void) {
   const handleConfirm = async () => {
     if (!selectedAdmin) return
 
+    setError(null)
+
     try {
-      setError(null)
-      setIsLoading(true)
-
-      await deleteAdmin(selectedAdmin.id)
-
+      await deleteMutation.mutateAsync(selectedAdmin.id)
       handleClose()
       onSuccess?.()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete admin')
-    } finally {
-      setIsLoading(false)
     }
   }
 

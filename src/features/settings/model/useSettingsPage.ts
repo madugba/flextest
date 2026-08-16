@@ -1,12 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type { Center } from '@/entities/center'
+import { useCentersQuery, type Center } from '@/entities/center'
 import { useApiConfigurations } from './apiConfigurations/useApiConfigurations'
 import { useAIModels } from './aiModels/useAIModels'
 import { useScoreConfigurations } from './scoreConfigurations/useScoreConfigurations'
-import { createLoadCenters } from './shared/handlers/createLoadCenters'
 
 interface UseSettingsPageReturn {
   loading: boolean
@@ -20,13 +19,13 @@ interface UseSettingsPageReturn {
 
 export function useSettingsPage(): UseSettingsPageReturn {
   const [loading, setLoading] = useState(true)
-  const [centers, setCenters] = useState<Center[]>([])
 
-  const reloadCenters = useCallback(() => createLoadCenters(setCenters)(), [setCenters])
+  const centersQuery = useCentersQuery()
+  const centers = centersQuery.data ?? []
 
-  useEffect(() => {
-    void reloadCenters()
-  }, [reloadCenters])
+  const reloadCenters = useCallback(() => {
+    void centersQuery.refetch()
+  }, [centersQuery])
 
   const apiConfigurations = useApiConfigurations({ centers, setLoading })
   const aiModels = useAIModels(centers)

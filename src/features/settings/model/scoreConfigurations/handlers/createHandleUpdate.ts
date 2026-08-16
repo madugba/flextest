@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react'
 import { toast } from 'sonner'
 import {
-  updateScoreConfiguration,
+  useUpdateScoreConfigurationMutation,
   type PreviewScoreResponse,
   type UpdateScoreConfigurationRequest,
   type ValidateFormulaResponse,
@@ -16,8 +16,7 @@ interface CreateHandleUpdateDeps {
   setScoreForm: Dispatch<SetStateAction<ScoreFormData>>
   setValidationResult: Dispatch<SetStateAction<ValidateFormulaResponse | null>>
   setPreviewResult: Dispatch<SetStateAction<PreviewScoreResponse | null>>
-  setIsUpdatingScore: Dispatch<SetStateAction<boolean>>
-  reload: () => void
+  updateMutation: ReturnType<typeof useUpdateScoreConfigurationMutation>
 }
 
 export function createHandleUpdate({
@@ -27,14 +26,11 @@ export function createHandleUpdate({
   setScoreForm,
   setValidationResult,
   setPreviewResult,
-  setIsUpdatingScore,
-  reload,
+  updateMutation,
 }: CreateHandleUpdateDeps) {
   return async (e: FormEvent) => {
     e.preventDefault()
     if (!editingScoreId) return
-
-    setIsUpdatingScore(true)
 
     try {
       const updateData: UpdateScoreConfigurationRequest = {
@@ -49,18 +45,15 @@ export function createHandleUpdate({
         maxScore: scoreForm.maxScore,
       }
 
-      await updateScoreConfiguration(editingScoreId, updateData)
+      await updateMutation.mutateAsync({ id: editingScoreId, data: updateData })
       toast.success('Score configuration updated successfully')
 
       setEditingScoreId(null)
       setScoreForm({ ...EMPTY_SCORE_FORM })
       setValidationResult(null)
       setPreviewResult(null)
-      await reload()
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'Failed to update score configuration'))
-    } finally {
-      setIsUpdatingScore(false)
     }
   }
 }

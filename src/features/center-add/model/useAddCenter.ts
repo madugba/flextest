@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { createCenter, validateCreateCenter, type CreateCenterRequest } from '@/entities/center'
+import { useCreateCenterMutation, validateCreateCenter, type CreateCenterRequest } from '@/entities/center'
 
 export function useAddCenter(onSuccess?: () => void) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<CreateCenterRequest>({
     centerName: '',
@@ -15,6 +14,9 @@ export function useAddCenter(onSuccess?: () => void) {
     state: '',
     lga: '',
   })
+
+  const createMutation = useCreateCenterMutation()
+  const isLoading = createMutation.isPending
 
   const handleOpen = () => {
     setIsOpen(true)
@@ -35,25 +37,20 @@ export function useAddCenter(onSuccess?: () => void) {
   }
 
   const handleSubmit = async () => {
+    setError(null)
+
+    const validationError = validateCreateCenter(formData)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     try {
-      setError(null)
-
-      const validationError = validateCreateCenter(formData)
-      if (validationError) {
-        setError(validationError)
-        return
-      }
-
-      setIsLoading(true)
-
-      await createCenter(formData)
-
+      await createMutation.mutateAsync(formData)
       handleClose()
       onSuccess?.()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create center')
-    } finally {
-      setIsLoading(false)
     }
   }
 

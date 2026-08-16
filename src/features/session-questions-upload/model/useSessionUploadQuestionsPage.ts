@@ -1,31 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import type { ExamSession } from '@/entities/exam-session'
-import { createLoadSessionAndStats } from './handlers/createLoadSessionAndStats'
 import { createHandleUpload } from './handlers/createHandleUpload'
+import { useSubjectQuestionStatsQuery } from './useSubjectQuestionStatsQuery'
 import { getTotalUploaded } from './selectors/getTotalUploaded'
 import { getTotalRequired } from './selectors/getTotalRequired'
 import { getOverallProgress } from './selectors/getOverallProgress'
-import type { SubjectQuestionStats } from './types'
 
 export function useSessionUploadQuestionsPage() {
   const router = useRouter()
   const params = useParams()
   const sessionId = params.sessionId as string
 
-  const [session, setSession] = useState<ExamSession | null>(null)
-  const [questionStats, setQuestionStats] = useState<SubjectQuestionStats[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  const loadSessionAndStats = useCallback(
-    (bypassCache: boolean = false) =>
-      createLoadSessionAndStats({ sessionId, setIsLoading, setSession, setQuestionStats })(
-        bypassCache
-      ),
-    [sessionId, setIsLoading, setSession, setQuestionStats]
-  )
+  const { session, questionStats, isLoading, refetch } = useSubjectQuestionStatsQuery(sessionId)
 
   useEffect(() => {
     if (!sessionId) return
@@ -35,20 +23,18 @@ export function useSessionUploadQuestionsPage() {
       sessionStorage.removeItem('questions-uploaded')
       router.refresh()
     }
-
-    void loadSessionAndStats(justUploaded)
-  }, [sessionId, router, loadSessionAndStats])
+  }, [sessionId, router])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && sessionId) {
-        void loadSessionAndStats(true)
+        void refetch()
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [sessionId, loadSessionAndStats])
+  }, [sessionId, refetch])
 
   const handleUpload = createHandleUpload(router, sessionId)
 
@@ -62,7 +48,7 @@ export function useSessionUploadQuestionsPage() {
     questionStats,
     isLoading,
     handleGoBack: () => router.back(),
-    handleRefresh: () => loadSessionAndStats(true),
+    handleRefresh: () => void refetch(),
     handleUpload,
     totalUploaded,
     totalRequired,

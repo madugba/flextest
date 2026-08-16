@@ -2,14 +2,19 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type { APIConfiguration } from '@/entities/api-configuration'
+import {
+  useAPIConfigurationsQuery,
+  useCreateAPIConfigurationMutation,
+  useUpdateAPIConfigurationMutation,
+  useDeleteAPIConfigurationMutation,
+  type APIConfiguration,
+} from '@/entities/api-configuration'
 import type { Center } from '@/entities/center'
 import { createHandleCancel } from './handlers/createHandleCancel'
 import { createHandleCreate } from './handlers/createHandleCreate'
 import { createHandleDelete } from './handlers/createHandleDelete'
 import { createHandleEdit } from './handlers/createHandleEdit'
 import { createHandleSave } from './handlers/createHandleSave'
-import { createLoadConfigurations } from './handlers/createLoadConfigurations'
 import {
   EMPTY_API_CONFIGURATION_FORM,
   type APIConfigurationFormData,
@@ -25,21 +30,26 @@ export function useApiConfigurations({
   centers,
   setLoading,
 }: UseApiConfigurationsDeps): APIConfigurationsController {
-  const [configurations, setConfigurations] = useState<APIConfiguration[]>([])
   const [formData, setFormData] = useState<APIConfigurationFormData>({
     ...EMPTY_API_CONFIGURATION_FORM,
   })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const reload = useCallback(
-    () => createLoadConfigurations(setConfigurations, setLoading)(),
-    [setConfigurations, setLoading]
-  )
+  const query = useAPIConfigurationsQuery()
+  const createMutation = useCreateAPIConfigurationMutation()
+  const updateMutation = useUpdateAPIConfigurationMutation()
+  const deleteMutation = useDeleteAPIConfigurationMutation()
+
+  const configurations = query.data ?? []
 
   useEffect(() => {
-    void reload()
-  }, [reload])
+    if (!query.isLoading) setLoading(false)
+  }, [query.isLoading, setLoading])
+
+  const reload = useCallback(() => {
+    void query.refetch()
+  }, [query])
 
   const handleCreate = useCallback(
     () => createHandleCreate(setIsCreating, setFormData, centers)(),
@@ -60,9 +70,19 @@ export function useApiConfigurations({
         setIsCreating,
         setEditingId,
         setFormData,
-        reload,
+        createMutation,
+        updateMutation,
       })(),
-    [formData, isCreating, editingId, setIsCreating, setEditingId, setFormData, reload]
+    [
+      formData,
+      isCreating,
+      editingId,
+      setIsCreating,
+      setEditingId,
+      setFormData,
+      createMutation,
+      updateMutation,
+    ]
   )
 
   const handleCancel = useCallback(
@@ -71,8 +91,8 @@ export function useApiConfigurations({
   )
 
   const handleDelete = useCallback(
-    (id: string, name: string) => createHandleDelete(reload)(id, name),
-    [reload]
+    (id: string, name: string) => createHandleDelete(deleteMutation)(id, name),
+    [deleteMutation]
   )
 
   return {

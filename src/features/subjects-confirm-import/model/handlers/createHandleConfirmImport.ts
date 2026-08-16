@@ -1,6 +1,5 @@
-import type { Dispatch, SetStateAction } from 'react'
 import { toast } from 'sonner'
-import { confirmImportSubjects } from '@/entities/subject'
+import { useConfirmImportSubjectsMutation } from '@/entities/subject'
 import type { PendingSubject } from '../types'
 import { clearPendingImport } from '../storage'
 import { getValidSubjects } from '../selectors/getValidSubjects'
@@ -12,11 +11,11 @@ interface RedirectRouter {
 interface CreateHandleConfirmImportDeps {
   subjects: PendingSubject[]
   router: RedirectRouter
-  setIsImporting: Dispatch<SetStateAction<boolean>>
+  confirmMutation: ReturnType<typeof useConfirmImportSubjectsMutation>
 }
 
 export function createHandleConfirmImport(deps: CreateHandleConfirmImportDeps) {
-  const { subjects, router, setIsImporting } = deps
+  const { subjects, router, confirmMutation } = deps
 
   return async () => {
     const validSubjects = getValidSubjects(subjects)
@@ -31,10 +30,8 @@ export function createHandleConfirmImport(deps: CreateHandleConfirmImportDeps) {
       toast.warning(`${emptyCount} subject(s) with empty names will be skipped`)
     }
 
-    setIsImporting(true)
-
     try {
-      const result = await confirmImportSubjects({ subjects: validSubjects })
+      const result = await confirmMutation.mutateAsync({ subjects: validSubjects })
 
       clearPendingImport()
 
@@ -47,8 +44,6 @@ export function createHandleConfirmImport(deps: CreateHandleConfirmImportDeps) {
       router.push('/dashboard/subjects')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to import subjects')
-    } finally {
-      setIsImporting(false)
     }
   }
 }

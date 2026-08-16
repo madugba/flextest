@@ -1,4 +1,3 @@
-import { importCandidates } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'
 import { toast } from 'sonner'
 import type { CandidateImportState } from '../useCandidateImportState'
@@ -13,9 +12,9 @@ export function createImportFromApi(
       selectedExamSessionId,
       visibleStudents,
       selectedSubjects,
+      importMutation,
       handleClose,
       setError,
-      setIsLoading,
     } = state
 
     if (!selectedCenterId) {
@@ -41,7 +40,6 @@ export function createImportFromApi(
 
     try {
       setError(null)
-      setIsLoading(true)
       toast.loading(`Importing ${visibleStudents.length} candidate(s)...`, { id: 'import-loading' })
       const candidates = visibleStudents
         .map((s) => {
@@ -59,7 +57,7 @@ export function createImportFromApi(
           }
         })
         .filter((c): c is NonNullable<typeof c> => c !== null)
-      const result = await importCandidates({ candidates })
+      const result = await importMutation.mutateAsync({ candidates })
       toast.dismiss('import-loading')
       handleClose()
       if (result.failed > 0) {
@@ -77,8 +75,6 @@ export function createImportFromApi(
       toast.dismiss('import-loading')
       setError(msg)
       toast.error('Import failed', { description: msg })
-    } finally {
-      setIsLoading(false)
     }
   }
 }

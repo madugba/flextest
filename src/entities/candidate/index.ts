@@ -16,6 +16,13 @@ export {
   deleteCandidate,
   importCandidates,
 } from './api/candidateApi'
+export { useCandidatesQuery, useCandidateQuery } from './model/queries'
+export {
+  useCreateCandidateMutation,
+  useUpdateCandidateMutation,
+  useDeleteCandidateMutation,
+  useImportCandidatesMutation,
+} from './model/mutations'
 
 export {
   getCandidateFullName,

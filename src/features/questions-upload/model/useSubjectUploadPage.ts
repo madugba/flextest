@@ -1,10 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { toast } from 'sonner'
-import { getAllAIModels, type AIModelConfiguration } from '@/entities/ai-model'
-import { createLoadData } from './handlers/createLoadData'
+import {
+  useAIModelsQuery,
+} from '@/entities/ai-model'
+import { useSubjectQuery } from '@/entities/subject'
+import { useExamSessionQuery } from '@/entities/exam-session'
+import {
+  useQuestionsBySubjectAndSessionQuery,
+  useCreateQuestionMutation,
+  useUpdateQuestionMutation,
+  useDeleteQuestionMutation,
+  useBulkImportQuestionsMutation,
+} from '@/entities/question'
 import { createResetForm } from './handlers/createResetForm'
 import { createHandleSubmit } from './handlers/createHandleSubmit'
 import { createHandleEdit } from './handlers/createHandleEdit'
@@ -18,7 +27,6 @@ import { createHandleSubmitGenerated } from './handlers/createHandleSubmitGenera
 import { getRequiredQuestionCount } from './selectors/getRequiredQuestionCount'
 import { getProgressPercentage } from './selectors/getProgressPercentage'
 import { filterQuestionsByQuery } from './selectors/filterQuestionsByQuery'
-import { useQuestionDataState } from './state/useQuestionDataState'
 import { useQuestionFormState } from './state/useQuestionFormState'
 import { useQuestionSelectionState } from './state/useQuestionSelectionState'
 import { useQuestionImportState } from './state/useQuestionImportState'
@@ -30,20 +38,19 @@ export function useSubjectUploadPage() {
   const sessionId = (params?.sessionId as string) || ''
   const subjectId = (params?.subjectId as string) || ''
 
-  const {
-    subject,
-    setSubject,
-    session,
-    setSession,
-    questions,
-    setQuestions,
-    isLoading,
-    setIsLoading,
-    isSaving,
-    setIsSaving,
-    error,
-    setError,
-  } = useQuestionDataState()
+  const subjectQuery = useSubjectQuery(subjectId || undefined)
+  const sessionQuery = useExamSessionQuery(sessionId || undefined)
+  const questionsQuery = useQuestionsBySubjectAndSessionQuery(subjectId || undefined, sessionId || undefined)
+  const aiModelsQuery = useAIModelsQuery()
+
+  const subject = subjectQuery.data ?? null
+  const session = sessionQuery.data ?? null
+  const questions = questionsQuery.data ?? []
+
+  const createMutation = useCreateQuestionMutation()
+  const updateMutation = useUpdateQuestionMutation()
+  const deleteMutation = useDeleteQuestionMutation()
+  const importMutation = useBulkImportQuestionsMutation()
 
   const {
     formData,
@@ -62,7 +69,7 @@ export function useSubjectUploadPage() {
     setEditDialogOpen,
   } = useQuestionFormState()
 
-  const { selectedIds, setSelectedIds, isBulkDeleting, setIsBulkDeleting, bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen } =
+  const { selectedIds, setSelectedIds, isBulkDeleting, bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen } =
     useQuestionSelectionState()
 
   const {
@@ -72,7 +79,6 @@ export function useSubjectUploadPage() {
     parsedRows,
     setParsedRows,
     isImporting,
-    setIsImporting,
   } = useQuestionImportState()
 
   const {
@@ -87,49 +93,37 @@ export function useSubjectUploadPage() {
     generatedQuestions,
     setGeneratedQuestions,
     isSubmittingGenerated,
-    setIsSubmittingGenerated,
   } = useQuestionAiState()
 
-  const [aiModels, setAiModels] = useState<AIModelConfiguration[]>([])
+  const aiModels = (aiModelsQuery.data ?? []).filter((m) => m.isActive)
 
-  useEffect(() => {
-    const loadAIModels = async () => {
-      try {
-        const models = await getAllAIModels()
-        setAiModels(models.filter((m) => m.isActive))
-      } catch (error) {
-        console.error('Failed to load AI models:', error)
-        toast.error('Failed to load AI models')
-      }
-    }
-    void loadAIModels()
-  }, [])
+  const isLoading =
+    subjectQuery.isLoading || sessionQuery.isLoading || questionsQuery.isLoading
 
-  const loadData = useCallback(
-    (bypassCache?: boolean) =>
-      createLoadData({
-        subjectId,
-        sessionId,
-        setIsLoading,
-        setError,
-        setSubject,
-        setSession,
-        setQuestions,
-      })(bypassCache),
-    [subjectId, sessionId, setIsLoading, setError, setSubject, setSession, setQuestions]
-  )
+  const isSaving =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    importMutation.isPending
 
-  useEffect(() => {
-    if (subjectId && sessionId) {
-      void loadData()
-    }
-  }, [subjectId, sessionId, loadData])
+  const error =
+    subjectQuery.error?.message ??
+    sessionQuery.error?.message ??
+    questionsQuery.error?.message ??
+    null
+
+  const loadData = useCallback(async () => {
+    await Promise.all([
+      subjectQuery.refetch(),
+      sessionQuery.refetch(),
+      questionsQuery.refetch(),
+    ])
+  }, [subjectQuery, sessionQuery, questionsQuery])
 
   const resetForm = createResetForm({
     setFormData,
     setEditingQuestion,
     setEditDialogOpen,
-    setError,
   })
 
   const handleSubmit = createHandleSubmit({
@@ -137,28 +131,22 @@ export function useSubjectUploadPage() {
     editingQuestion,
     subjectId,
     sessionId,
-    setIsSaving,
-    setError,
-    setQuestions,
+    createMutation,
+    updateMutation,
     setEditDialogOpen,
     setActiveTab,
     resetForm,
-    loadData,
   })
 
   const handleEdit = createHandleEdit({
     setEditingQuestion,
     setFormData,
-    setError,
     setEditDialogOpen,
   })
 
   const handleDelete = createHandleDelete({
     questionToDelete,
-    questions,
-    setIsSaving,
-    setError,
-    setQuestions,
+    deleteMutation,
     setSelectedIds,
     setDeleteDialogOpen,
     setQuestionToDelete,
@@ -166,8 +154,7 @@ export function useSubjectUploadPage() {
 
   const handleBulkDelete = createHandleBulkDelete({
     selectedIds,
-    setIsBulkDeleting,
-    setQuestions,
+    deleteMutation,
     setSelectedIds,
     setBulkDeleteConfirmOpen,
   })
@@ -181,11 +168,10 @@ export function useSubjectUploadPage() {
     parsedRows,
     subjectId,
     sessionId,
-    setIsImporting,
+    importMutation,
     setImportDialogOpen,
     setImportFile,
     setParsedRows,
-    loadData,
   })
 
   const handleGenerateQuestions = createHandleGenerateQuestions({
@@ -201,11 +187,10 @@ export function useSubjectUploadPage() {
     generatedQuestions,
     subjectId,
     sessionId,
-    setIsSubmittingGenerated,
+    importMutation,
     setGeneratedQuestions,
     setPreviewDialogOpen,
     setAiGenerateDialogOpen,
-    loadData,
   })
 
   const requiredQuestions = getRequiredQuestionCount(session, subject)

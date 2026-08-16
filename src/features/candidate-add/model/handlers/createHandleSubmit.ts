@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { createCandidate, type CreateCandidateRequest } from '@/entities/candidate'
+import { useCreateCandidateMutation, type CreateCandidateRequest } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'
 import { getSubmitData } from '../selectors/getSubmitData'
 import { getValidationError } from '../selectors/getValidationError'
@@ -7,22 +7,21 @@ import { getValidationError } from '../selectors/getValidationError'
 interface CreateHandleSubmitDeps {
   formData: CreateCandidateRequest
   selectedSubjects: string[]
+  createMutation: ReturnType<typeof useCreateCandidateMutation>
   setError: Dispatch<SetStateAction<string | null>>
-  setIsLoading: Dispatch<SetStateAction<boolean>>
   onSuccess?: () => void
 }
 
 export function createHandleSubmit({
   formData,
   selectedSubjects,
+  createMutation,
   setError,
-  setIsLoading,
   onSuccess,
 }: CreateHandleSubmitDeps) {
   return async () => {
     try {
       setError(null)
-      setIsLoading(true)
 
       const validationError = getValidationError(formData, selectedSubjects)
       if (validationError) {
@@ -30,7 +29,7 @@ export function createHandleSubmit({
         return
       }
 
-      await createCandidate(getSubmitData(formData, selectedSubjects))
+      await createMutation.mutateAsync(getSubmitData(formData, selectedSubjects))
 
       onSuccess?.()
     } catch (err: unknown) {
@@ -39,8 +38,6 @@ export function createHandleSubmit({
       } else {
         setError(err instanceof Error ? err.message : 'Failed to create candidate')
       }
-    } finally {
-      setIsLoading(false)
     }
   }
 }

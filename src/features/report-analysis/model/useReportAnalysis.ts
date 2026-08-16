@@ -1,48 +1,40 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { getSessionAnalysis, type SessionAnalysis } from '@/entities/exam-session'
+import { useCallback } from 'react'
+import {
+  useExamSessionQuery,
+  useSessionAnalysisQuery,
+  useSessionStatisticsQuery,
+} from '@/entities/exam-session'
 
-/**
- * Hook for fetching and managing session analysis data
- * Handles loading states, errors, and data refetching
- */
 export function useReportAnalysis(sessionId: string | null) {
-  const [analysis, setAnalysis] = useState<SessionAnalysis | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const sessionQuery = useExamSessionQuery(sessionId ?? undefined)
+  const analysisQuery = useSessionAnalysisQuery(sessionId ?? undefined)
+  const statisticsQuery = useSessionStatisticsQuery(sessionId ?? undefined)
 
-  const fetchAnalysis = useCallback(async () => {
-    if (!sessionId) return
+  const analysis = analysisQuery.data ?? null
 
-    setLoading(true)
-    setError(null)
+  const loading =
+    sessionQuery.isLoading || analysisQuery.isLoading || statisticsQuery.isLoading
 
-    try {
-      const data = await getSessionAnalysis(sessionId)
-      setAnalysis(data)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch session analysis'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }, [sessionId])
+  const error =
+    sessionQuery.error?.message ??
+    analysisQuery.error?.message ??
+    statisticsQuery.error?.message ??
+    null
 
-  useEffect(() => {
-    if (sessionId) {
-      fetchAnalysis()
-    } else {
-      setAnalysis(null)
-      setError(null)
-    }
-  }, [sessionId, fetchAnalysis])
+  const refetch = useCallback(async () => {
+    await Promise.all([
+      sessionQuery.refetch(),
+      analysisQuery.refetch(),
+      statisticsQuery.refetch(),
+    ])
+  }, [sessionQuery, analysisQuery, statisticsQuery])
 
   return {
     analysis,
     loading,
     error,
-    refetch: fetchAnalysis,
+    refetch,
   }
 }
-

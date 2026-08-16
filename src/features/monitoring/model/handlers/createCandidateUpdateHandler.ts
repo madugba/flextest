@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { SessionMonitoringDetails } from '@/entities/monitoring'
 import type { CandidateStatus } from '@/entities/candidate'
 import type { CandidateUpdateData } from '@/shared/lib/socket'
+import { queryKeys } from '@/shared/api/queryKeys'
 
 export function createCandidateUpdateHandler({
   sessionId,
@@ -11,10 +12,11 @@ export function createCandidateUpdateHandler({
   queryClient: QueryClient
 }) {
   return (data: CandidateUpdateData) => {
+    if (!sessionId) return
     if (data.sessionId && data.sessionId !== sessionId) return
 
     queryClient.setQueryData<SessionMonitoringDetails>(
-      ['monitoring', 'session', sessionId, 'details'],
+      queryKeys.monitoringSession(sessionId),
       (oldData) => {
         if (!oldData) return oldData
         return {
@@ -30,7 +32,7 @@ export function createCandidateUpdateHandler({
 
     // Refetch stats so submitted/active counts update immediately
     void queryClient.invalidateQueries({
-      queryKey: ['monitoring', 'session', sessionId, 'statistics'],
+      queryKey: queryKeys.monitoringStatistics(sessionId),
     })
   }
 }
