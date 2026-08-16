@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { loadModuleMapping, saveModuleMapping } from '../lib/moduleMappingStorage'
 import type { SubjectModuleMapping, SubjectRef } from './types'

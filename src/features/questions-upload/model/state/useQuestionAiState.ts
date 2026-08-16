@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import type { GeneratedQuestion } from '@/shared/services/ai-generation.service'
 import type { AiGenerateFormData } from '../types'

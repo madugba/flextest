@@ -1,3 +1,5 @@
+import 'server-only'
+
 // ---------------------------------------------------------------------------
 // Key scheme (two namespaces, same TimerState shape):
 //

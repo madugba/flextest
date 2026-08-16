@@ -3,6 +3,8 @@ import { randomUUID } from 'crypto'
 import { db } from '@/lib/db'
 import type { PoolClient } from 'pg'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   let body: unknown
   try {

@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useState } from 'react'
 import type { AIModelConfiguration } from '@/entities/ai-model'
 import type { Center } from '@/entities/center'

@@ -1,3 +1,5 @@
+import 'server-only'
+
 // Node.js-only module — never imported by the Edge runtime.
 // All pg / ioredis usage lives here so instrumentation.ts stays Edge-safe.
 

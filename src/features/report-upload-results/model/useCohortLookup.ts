@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useMemo, useState } from 'react'
 import { proxyFetch } from '../lib/proxyFetch'
 import { extractCohorts } from '../lib/scorePush'

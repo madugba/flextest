@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback } from 'react'
 import type { Subject } from '@/entities/subject'
 import { createOpenDeleteDialog } from './handlers/createOpenDeleteDialog'

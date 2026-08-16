@@ -1,3 +1,5 @@
+import 'server-only'
+
 // Next.js instrumentation — runs once per worker process at startup.
 //
 // IMPORTANT: this file is compiled for BOTH Node.js and Edge runtimes.

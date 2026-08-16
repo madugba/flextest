@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import type { Candidate, UpdateCandidateRequest } from '@/entities/candidate'
 import { getAllSubjects, type Subject } from '@/entities/subject'

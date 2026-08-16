@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { getAllAdmins, type Admin } from '@/entities/admin'
 import { ApiError } from '@/shared/api/client'

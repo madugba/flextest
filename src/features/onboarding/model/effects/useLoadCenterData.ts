@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import type { useRouter } from 'next/navigation'

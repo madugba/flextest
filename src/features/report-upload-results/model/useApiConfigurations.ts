@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useState } from 'react'
 import { getAllAPIConfigurations } from '@/entities/api-configuration'
 import type { APIConfiguration } from './types'

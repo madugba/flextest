@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useRef, useState } from 'react'
 import { proxyFetch } from '../lib/proxyFetch'
 import { runWithConcurrency } from '../lib/concurrency'

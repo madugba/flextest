@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { mkdir, unlink, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'

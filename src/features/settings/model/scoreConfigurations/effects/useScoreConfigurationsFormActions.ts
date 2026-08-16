@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback } from 'react'
 import type { FormEvent } from 'react'
 import type { Center } from '@/entities/center'

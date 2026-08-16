@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import type { Question } from '@/entities/question'
 import type { QuestionFormData } from '../types'
