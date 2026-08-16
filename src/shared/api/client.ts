@@ -15,6 +15,7 @@ export class ApiClient {
       timeout: 20000,
       headers: {
         'Content-Type': 'application/json',
+        ...(baseUrl.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {}),
       },
     })
 
