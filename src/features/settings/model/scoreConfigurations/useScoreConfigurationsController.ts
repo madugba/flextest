@@ -1,3 +1,5 @@
+'use client'
+
 import type { Center } from '@/entities/center'
 import { useScoreConfigurationsFormActions } from './effects/useScoreConfigurationsFormActions'
 import { useScoreConfigurationsItemActions } from './effects/useScoreConfigurationsItemActions'

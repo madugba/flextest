@@ -1,3 +1,5 @@
+'use client'
+
 import { useParams } from 'next/navigation'
 import { useQuestionsDebugLog } from './effects/useQuestionsDebugLog'
 import { useLoadAIModels } from './effects/useLoadAIModels'

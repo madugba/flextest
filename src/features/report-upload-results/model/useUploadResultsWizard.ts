@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import { toast } from 'sonner'
 import { useApiConfigurations } from './useApiConfigurations'

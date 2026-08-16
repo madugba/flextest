@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { getAllCandidates, type Candidate, type CandidateFilters, type CandidateStatus } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'

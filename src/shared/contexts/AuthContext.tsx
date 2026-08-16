@@ -1,7 +1,14 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   login as apiLogin,
   logout as apiLogout,
@@ -12,13 +19,15 @@ import {
   type User,
   type LoginRequest,
 } from '@/shared/api/authApi'
-import { ApiError } from '@/shared/api/client'
+import { ApiError, onUnauthorized } from '@/shared/api/client'
 
-interface AuthContextType {
+export type LoginResult = { success: true } | { success: false; message: string }
+
+export interface AuthContextType {
   user: User | null
   loading: boolean
   error: string | null
-  login: (credentials: LoginRequest) => Promise<void>
+  login: (credentials: LoginRequest) => Promise<LoginResult>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   updateUser: (userData: Partial<User>) => void
@@ -26,62 +35,88 @@ interface AuthContextType {
   isAuthenticated: boolean
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
+    let mounted = true
+
     const initAuth = async () => {
       const token = getAuthToken()
 
       if (!token) {
-        setLoading(false)
+        if (mounted) setLoading(false)
         return
       }
 
       try {
         const userData = await getCurrentUser()
-        setUser(userData)
+        if (mounted) setUser(userData)
       } catch {
-        removeAuthToken()
-        setUser(null)
+        if (mounted) {
+          removeAuthToken()
+          setUser(null)
+        }
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
     }
 
     initAuth()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
-  const login = useCallback(async (credentials: LoginRequest) => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await apiLogin(credentials)
-
-      setAuthToken(response.data.token.accessToken)
-
-      setUser(response.data.user)
-
-      router.push('/dashboard')
-    } catch (err) {
-      const errorMessage = err instanceof ApiError
-        ? err.message
-        : 'Login failed. Please try again.'
-
-      setError(errorMessage)
+  useEffect(() => {
+    const handleUnauthorized = () => {
       removeAuthToken()
       setUser(null)
-      throw err
-    } finally {
-      setLoading(false)
+      if (pathname !== '/login') {
+        router.push('/login')
+      }
     }
-  }, [router])
+
+    return onUnauthorized(handleUnauthorized)
+  }, [router, pathname])
+
+  const login = useCallback(
+    async (credentials: LoginRequest): Promise<LoginResult> => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await apiLogin(credentials)
+
+        setAuthToken(response.data.token.accessToken)
+
+        setUser(response.data.user)
+
+        router.push('/dashboard')
+
+        return { success: true }
+      } catch (err) {
+        const errorMessage =
+          err instanceof ApiError ? err.message : 'Login failed. Please try again.'
+
+        setError(errorMessage)
+        removeAuthToken()
+        setUser(null)
+
+        return { success: false, message: errorMessage }
+      } finally {
+        setLoading(false)
+      }
+    },
+    [router]
+  )
 
   const logout = useCallback(async () => {
     try {
@@ -104,11 +139,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
+      setError(null)
       const userData = await getCurrentUser()
       setUser(userData)
     } catch {
       removeAuthToken()
       setUser(null)
+      setError('Session expired. Please log in again.')
       router.push('/login')
     }
   }, [router])
@@ -124,25 +161,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null)
   }, [])
 
-  const value: AuthContextType = {
-    user,
-    loading,
-    error,
-    login,
-    logout,
-    refreshUser,
-    updateUser,
-    clearError,
-    isAuthenticated: !!user,
-  }
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      loading,
+      error,
+      login,
+      logout,
+      refreshUser,
+      updateUser,
+      clearError,
+      isAuthenticated: !!user,
+    }),
+    [user, loading, error, login, logout, refreshUser, updateUser, clearError]
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
 }

@@ -1,3 +1,5 @@
+'use client'
+
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardMetrics, getSystemMetrics, getBusinessMetrics } from '@/entities/metrics/api/metricsApi'
 import type { DashboardMetrics, SystemMetrics, BusinessMetrics } from '@/entities/metrics/api/metricsApi'

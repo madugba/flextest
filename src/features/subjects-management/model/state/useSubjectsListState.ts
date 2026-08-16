@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useState } from 'react'
 import type { Subject } from '@/entities/subject'
 import { createFetchSubjects } from '../handlers/createFetchSubjects'

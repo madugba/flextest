@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import type { ExamSession } from '@/entities/exam-session'

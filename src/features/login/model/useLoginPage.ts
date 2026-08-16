@@ -1,5 +1,7 @@
+'use client'
+
 import { useState } from 'react'
-import { useAuth } from '@/shared/contexts/AuthContext'
+import { useAuth } from '@/shared/hooks/useAuth'
 import { createHandleSubmit } from './handlers/createHandleSubmit'
 import { createTogglePasswordVisibility } from './handlers/createTogglePasswordVisibility'
 import type { LoginFormData } from './types'

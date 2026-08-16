@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sniffImageType } from '@/lib/image-sniffing'
 import { deletePassportImage, savePassportImage } from '@/lib/passport-storage'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()

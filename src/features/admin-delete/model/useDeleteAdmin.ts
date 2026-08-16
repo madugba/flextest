@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { deleteAdmin, type Admin } from '@/entities/admin'
 

@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from 'react'
 import { getAllCenters, type Center } from '@/entities/center'
 import { ApiError } from '@/shared/api/client'

@@ -6,6 +6,20 @@ import type { ApiResponse } from './types'
 export { ApiError } from './errors'
 export type { ApiResponse } from './types'
 
+export type UnauthorizedListener = () => void
+const unauthorizedListeners = new Set<UnauthorizedListener>()
+
+export function onUnauthorized(listener: UnauthorizedListener): () => void {
+  unauthorizedListeners.add(listener)
+  return () => {
+    unauthorizedListeners.delete(listener)
+  }
+}
+
+function notifyUnauthorized(): void {
+  unauthorizedListeners.forEach((listener) => listener())
+}
+
 export class ApiClient {
   private instance: AxiosInstance
 
@@ -41,6 +55,11 @@ export class ApiClient {
       (response) => response,
       (error) => {
         if (error.response) {
+          const url = error.config?.url || ''
+          const isAuthEndpoint = /\/auth\/(login|logout)(\b|$)/.test(url)
+          if (error.response.status === 401 && !isAuthEndpoint) {
+            notifyUnauthorized()
+          }
           const apiResponse = error.response.data as ApiResponse
           throw new ApiError(
             apiResponse.error?.message || 'An error occurred',

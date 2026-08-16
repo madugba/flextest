@@ -1,3 +1,5 @@
+'use client'
+
 import type { ErrorSearchParams } from './types'
 import { getErrorContent } from './selectors/getErrorContent'
 import { parseErrorParams } from './selectors/parseErrorParams'

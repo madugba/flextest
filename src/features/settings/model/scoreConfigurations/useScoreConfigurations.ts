@@ -1,3 +1,5 @@
+'use client'
+
 import type { Center } from '@/entities/center'
 import type { ScoreConfigurationsController } from './types'
 import { useScoreConfigurationLoad } from './effects/useScoreConfigurationLoad'

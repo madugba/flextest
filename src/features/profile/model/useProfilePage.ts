@@ -1,6 +1,8 @@
+'use client'
+
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/shared/contexts/AuthContext'
+import { useAuth } from '@/shared/hooks/useAuth'
 import { createHandleCancel } from './handlers/createHandleCancel'
 import { createHandleDeleteAccount } from './handlers/createHandleDeleteAccount'
 import { createHandleEdit } from './handlers/createHandleEdit'

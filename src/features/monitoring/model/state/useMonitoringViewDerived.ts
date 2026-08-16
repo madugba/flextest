@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import type { MonitoringCandidate } from '@/entities/monitoring'
 import { formatCandidateForDisplay } from '../selectors/formatCandidateForDisplay'

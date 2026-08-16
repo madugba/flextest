@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import type { PoolClient } from 'pg'
 
+export const runtime = 'nodejs'
+
 // ---------------------------------------------------------------------------
 // Formula evaluator
 // ---------------------------------------------------------------------------

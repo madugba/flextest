@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { deleteExamSession } from '@/entities/exam-session'
 import { toast } from 'sonner'

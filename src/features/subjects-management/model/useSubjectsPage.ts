@@ -1,3 +1,5 @@
+'use client'
+
 import { useSubjectsPageActions } from './useSubjectsPageActions'
 import { useSubjectsPageDialogActions } from './useSubjectsPageDialogActions'
 import { useDialogState } from './state/useDialogState'

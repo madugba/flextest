@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useState } from 'react'
 import type { CreateCandidateRequest } from '@/entities/candidate'
 import type { ExamSession } from '@/entities/exam-session'

@@ -1,3 +1,5 @@
+import 'server-only'
+
 // ---------------------------------------------------------------------------
 // TimerState — anchor-based, zero writes while clock is running.
 //

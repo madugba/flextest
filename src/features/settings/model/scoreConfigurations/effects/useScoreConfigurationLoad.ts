@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect } from 'react'
 import { createLoadScoreConfigurations } from '../handlers/createLoadScoreConfigurations'
 import type { ScoreConfigurationState } from './useScoreConfigurationState'

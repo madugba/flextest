@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect } from 'react'
 import { createHandleCreate } from './handlers/createHandleCreate'
 import { createHandleDelete } from './handlers/createHandleDelete'

@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect, useCallback } from 'react'
 import { getSessionScores, getExamSessionById, type SessionScores, type ExamSession } from '@/entities/exam-session'
 

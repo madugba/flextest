@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { deleteCandidate, getCandidateById, type Candidate } from '@/entities/candidate'
 import { ApiError } from '@/shared/api/client'

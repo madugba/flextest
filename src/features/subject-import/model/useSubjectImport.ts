@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAllAPIConfigurations, type APIConfiguration } from '@/entities/api-configuration'

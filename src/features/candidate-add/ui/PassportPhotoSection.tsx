@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef, useState } from 'react'
 import { Label } from '@/shared/ui/label'
 import type { Dispatch, SetStateAction } from 'react'
