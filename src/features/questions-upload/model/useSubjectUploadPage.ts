@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { getAllAIModels, type AIModelConfiguration } from '@/entities/ai-model'
@@ -105,22 +105,19 @@ export function useSubjectUploadPage() {
     void loadAIModels()
   }, [])
 
-  useEffect(() => {
-    console.log('[questions state] Updated:', {
-      count: questions.length,
-      items: questions,
-    })
-  }, [questions])
-
-  const loadData = createLoadData({
-    subjectId,
-    sessionId,
-    setIsLoading,
-    setError,
-    setSubject,
-    setSession,
-    setQuestions,
-  })
+  const loadData = useCallback(
+    (bypassCache?: boolean) =>
+      createLoadData({
+        subjectId,
+        sessionId,
+        setIsLoading,
+        setError,
+        setSubject,
+        setSession,
+        setQuestions,
+      })(bypassCache),
+    [subjectId, sessionId, setIsLoading, setError, setSubject, setSession, setQuestions]
+  )
 
   useEffect(() => {
     if (subjectId && sessionId) {
