@@ -1,9 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { useQuestionsDebugLog } from './effects/useQuestionsDebugLog'
-import { useLoadAIModels } from './effects/useLoadAIModels'
-import { useInitialLoad } from './effects/useInitialLoad'
+import { toast } from 'sonner'
+import { getAllAIModels, type AIModelConfiguration } from '@/entities/ai-model'
 import { createLoadData } from './handlers/createLoadData'
 import { createResetForm } from './handlers/createResetForm'
 import { createHandleSubmit } from './handlers/createHandleSubmit'
@@ -90,9 +90,27 @@ export function useSubjectUploadPage() {
     setIsSubmittingGenerated,
   } = useQuestionAiState()
 
-  const aiModels = useLoadAIModels()
+  const [aiModels, setAiModels] = useState<AIModelConfiguration[]>([])
 
-  useQuestionsDebugLog(questions)
+  useEffect(() => {
+    const loadAIModels = async () => {
+      try {
+        const models = await getAllAIModels()
+        setAiModels(models.filter((m) => m.isActive))
+      } catch (error) {
+        console.error('Failed to load AI models:', error)
+        toast.error('Failed to load AI models')
+      }
+    }
+    void loadAIModels()
+  }, [])
+
+  useEffect(() => {
+    console.log('[questions state] Updated:', {
+      count: questions.length,
+      items: questions,
+    })
+  }, [questions])
 
   const loadData = createLoadData({
     subjectId,
@@ -104,7 +122,11 @@ export function useSubjectUploadPage() {
     setQuestions,
   })
 
-  useInitialLoad(subjectId, sessionId, loadData)
+  useEffect(() => {
+    if (subjectId && sessionId) {
+      void loadData()
+    }
+  }, [subjectId, sessionId, loadData])
 
   const resetForm = createResetForm({
     setFormData,

@@ -7,7 +7,7 @@ import type {
   ScoreConfiguration,
   ValidateFormulaResponse,
 } from '@/entities/score-configuration'
-import { EMPTY_SCORE_FORM, type ScoreFormData } from '../types'
+import { EMPTY_SCORE_FORM, type ScoreFormData } from './types'
 
 export interface ScoreConfigurationState {
   scoreConfigurations: ScoreConfiguration[]

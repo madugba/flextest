@@ -1,12 +1,10 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import type { ExamSession } from '@/entities/exam-session'
 import { createLoadSessionAndStats } from './handlers/createLoadSessionAndStats'
 import { createHandleUpload } from './handlers/createHandleUpload'
-import { useSessionQuestionsInitialLoad } from './effects/useSessionQuestionsInitialLoad'
-import { useVisibilityRefresh } from './effects/useVisibilityRefresh'
 import { getTotalUploaded } from './selectors/getTotalUploaded'
 import { getTotalRequired } from './selectors/getTotalRequired'
 import { getOverallProgress } from './selectors/getOverallProgress'
@@ -29,8 +27,28 @@ export function useSessionUploadQuestionsPage() {
     [sessionId, setIsLoading, setSession, setQuestionStats]
   )
 
-  useSessionQuestionsInitialLoad({ sessionId, router, loadSessionAndStats })
-  useVisibilityRefresh(sessionId, loadSessionAndStats)
+  useEffect(() => {
+    if (!sessionId) return
+
+    const justUploaded = sessionStorage.getItem('questions-uploaded') === sessionId
+    if (justUploaded) {
+      sessionStorage.removeItem('questions-uploaded')
+      router.refresh()
+    }
+
+    void loadSessionAndStats(justUploaded)
+  }, [sessionId, router, loadSessionAndStats])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && sessionId) {
+        void loadSessionAndStats(true)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [sessionId, loadSessionAndStats])
 
   const handleUpload = createHandleUpload(router, sessionId)
 

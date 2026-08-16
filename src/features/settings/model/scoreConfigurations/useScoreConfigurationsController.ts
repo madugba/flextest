@@ -1,9 +1,9 @@
 'use client'
 
 import type { Center } from '@/entities/center'
-import { useScoreConfigurationsFormActions } from './effects/useScoreConfigurationsFormActions'
-import { useScoreConfigurationsItemActions } from './effects/useScoreConfigurationsItemActions'
-import type { ScoreConfigurationState } from './effects/useScoreConfigurationState'
+import { useScoreConfigurationsFormActions } from './useScoreConfigurationsFormActions'
+import { useScoreConfigurationsItemActions } from './useScoreConfigurationsItemActions'
+import type { ScoreConfigurationState } from './useScoreConfigurationState'
 
 interface UseScoreConfigurationsControllerDeps {
   state: ScoreConfigurationState

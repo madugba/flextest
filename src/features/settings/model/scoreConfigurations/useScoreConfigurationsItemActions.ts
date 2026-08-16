@@ -1,10 +1,10 @@
 'use client'
 
 import { useCallback } from 'react'
-import { createHandleActivate } from '../handlers/createHandleActivate'
-import { createHandleDelete } from '../handlers/createHandleDelete'
-import { createHandlePreviewScore } from '../handlers/createHandlePreviewScore'
-import { createHandleValidateFormula } from '../handlers/createHandleValidateFormula'
+import { createHandleActivate } from './handlers/createHandleActivate'
+import { createHandleDelete } from './handlers/createHandleDelete'
+import { createHandlePreviewScore } from './handlers/createHandlePreviewScore'
+import { createHandleValidateFormula } from './handlers/createHandleValidateFormula'
 import type { ScoreConfigurationState } from './useScoreConfigurationState'
 
 export function useScoreConfigurationsItemActions(state: ScoreConfigurationState, reload: () => void) {

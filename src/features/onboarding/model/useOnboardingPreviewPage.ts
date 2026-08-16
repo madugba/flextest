@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useLoadCenterData } from './effects/useLoadCenterData'
 import { createHandleCreateCenter } from './handlers/createHandleCreateCenter'
 import type { CenterData } from './types'
 
@@ -12,7 +11,14 @@ export function useOnboardingPreviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  useLoadCenterData(router, setCenterData)
+  useEffect(() => {
+    const data = sessionStorage.getItem('centerData')
+    if (!data) {
+      router.push('/onboarding/setup')
+      return
+    }
+    setCenterData(JSON.parse(data))
+  }, [router, setCenterData])
 
   const handleSubmit = createHandleCreateCenter({
     centerData,
